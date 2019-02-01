@@ -1,5 +1,6 @@
 import datetime
 import json
+from custom_errors import ConfigurationError
 
 class Temperature(object):
     def __init__(self, reading: float):
@@ -31,33 +32,70 @@ class TemperatureReading(Temperature):
         return self._timestamp
 
 
-class Configuration():
-    #A dictionary containing dictionary keys and the expected value type
+
+class Configuration(object):
+    # A dictionary containing dictionary keys and the expected value type
+    valid_params = {}
+
+    def __init__(self, **kwargs):
+
+        # Construct a parameter dictionary and filter out invalid keys anc values
+
+
+        self._params = {
+            k: v for k, v in kwargs.items()
+                if
+                    k in self.valid_params.keys()
+                    and type(v) is self.valid_params[k]
+        }
+
+        if self._params.keys() != self.valid_params.keys():
+            raise ConfigurationError
+
+    def to_json(self):
+        return json.dumps(
+            obj=self._params
+        )
+
+    @classmethod
+    def from_json(cls, json_str:str):
+        # Creates a Configuration instance from a given json string
+        return cls(**json.loads(json_str))
+
+
+class SystemConfiguration(Configuration):
     valid_params = {
-        "primary_max_temp":float,
+        "primary_max_temp": float,
         "primary_min_temp": float,
         "secondary_max_temp": float,
         "secondary_min_temp": float,
     }
 
-    def __init__(self, **kwargs):
+    def __init__(self):
+        super().__init__()
 
-        #Construct a parameter dictionary
-        self.params = {k: v for k,v in kwargs.items() if (
-                k in self.valid_params.keys() and
-                type(v)is self.valid_params[k]
-            )
-        }
+    @property
+    def primary_max_temp(self):
+        return self._params["primary_max_temp"]
 
-    def to_json(self):
-        return json.dumps(
-            obj=self.params
-        )
+    @property
+    def primary_min_temp(self):
+        return self._params["primary_min_temp"]
 
-    @classmethod
-    def from_json(cls, json_str:str):
-        #Creates a Configuration instance from a given json string
-        return cls(**json.loads(json_str))
+    @property
+    def secondary_max_temp(self):
+        return self._params["secondary_max_temp"]
 
+    @property
+    def secondary_min_temp(self):
+        return self._params["secondary_min_temp"]
 
+class RoomConfiguration(Configuration):
+    # A dictionary containing dictionary keys and the expected value type
+    valid_params = {
+        "ideal_temp": float,
+    }
+
+    def __init__(self):
+        super().__init__()
 
