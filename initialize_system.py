@@ -1,5 +1,5 @@
 from data_classes import Temperature
-from system_components import TemperatureMonitor
+from system_components import TemperatureMonitor, RoomMonitorController
 
 
 # Setup Logger
@@ -10,10 +10,13 @@ from system_components import TemperatureMonitor
 
 
 room_temperature_sensors = [TemperatureMonitor(Temperature(20)) for i in range(5)]
+print(room_temperature_sensors)
 
 
+rmc = RoomMonitorController(room_temperature_sensors)
+print(rmc.__dict__)
 
-total_temperature_delta = sum(temp for temp in room_temperature_sensors)
+#total_temperature_delta = sum(temp.target_temp for temp in room_temperature_sensors)
 
 
 

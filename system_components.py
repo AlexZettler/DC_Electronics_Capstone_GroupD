@@ -2,12 +2,20 @@ from data_classes import Temperature, TemperatureReading
 
 class TemperatureMonitor(object):
     def __init__(self, target_temperature: Temperature):
-        self.target = target_temperature
+        self.target_temp = target_temperature
+
 
     def temperature_updated(self, temperature: TemperatureReading):
         pass
 
 
-class TemperatureMonitorController(object):
+class RoomMonitorController(object):
     def __init__(self, temperature_monitors: list):
-        pass
+
+        self.monitors = {}
+
+        for id,monitor in zip(range(len(temperature_monitors)),temperature_monitors):
+            self.monitors[id] = monitor
+
+
+

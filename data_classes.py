@@ -5,6 +5,13 @@ from custom_errors import IncompleteConfigurationError
 class Temperature(object):
     def __init__(self, reading: float):
         self.celsius = reading
+
+    def __str__(self):
+        return f"{self.celsius}C"
+
+    def __repr__(self):
+        return f"Temperature: {str(self)}"
+
     @property
     def celsius(self)->float:
         return self._reading
