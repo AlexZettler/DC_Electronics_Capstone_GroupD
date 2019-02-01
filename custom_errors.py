@@ -1,4 +1,4 @@
 
 
-class ConfigurationError(Exception):
+class IncompleteConfigurationError(Exception):
     pass

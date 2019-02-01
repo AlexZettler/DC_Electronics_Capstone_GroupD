@@ -1,4 +1,4 @@
-import pin_read_controller
+import system_components
 
 def get_reading(pin):
     pass

@@ -1,6 +1,6 @@
 import datetime
 import json
-from custom_errors import ConfigurationError
+from custom_errors import IncompleteConfigurationError
 
 class Temperature(object):
     def __init__(self, reading: float):
@@ -32,25 +32,15 @@ class TemperatureReading(Temperature):
         return self._timestamp
 
 
-
 class Configuration(object):
-    # A dictionary containing dictionary keys and the expected value type
-    valid_params = {}
 
     def __init__(self, **kwargs):
+        pass
 
-        # Construct a parameter dictionary and filter out invalid keys anc values
-
-
-        self._params = {
-            k: v for k, v in kwargs.items()
-                if
-                    k in self.valid_params.keys()
-                    and type(v) is self.valid_params[k]
-        }
-
-        if self._params.keys() != self.valid_params.keys():
-            raise ConfigurationError
+    @property
+    def _params(self)->dict:
+        # Provide a property for json IO to interface with
+        return dict()
 
     def to_json(self):
         return json.dumps(
@@ -63,39 +53,29 @@ class Configuration(object):
         return cls(**json.loads(json_str))
 
 
-class SystemConfiguration(Configuration):
-    valid_params = {
-        "primary_max_temp": float,
-        "primary_min_temp": float,
-        "secondary_max_temp": float,
-        "secondary_min_temp": float,
-    }
+class LimitConfiguration(Configuration):
 
-    def __init__(self):
+    def __init__(self,max: float,min: float):
+        self.max = max
+        self.min = min
         super().__init__()
 
     @property
-    def primary_max_temp(self):
-        return self._params["primary_max_temp"]
-
-    @property
-    def primary_min_temp(self):
-        return self._params["primary_min_temp"]
-
-    @property
-    def secondary_max_temp(self):
-        return self._params["secondary_max_temp"]
-
-    @property
-    def secondary_min_temp(self):
-        return self._params["secondary_min_temp"]
+    def _params(self) -> dict:
+        return {
+            "max": self.max,
+            "min": self.min
+        }
 
 class RoomConfiguration(Configuration):
-    # A dictionary containing dictionary keys and the expected value type
-    valid_params = {
-        "ideal_temp": float,
-    }
 
-    def __init__(self):
+    def __init__(self, ideal_temperature: float):
+        self.ideal_temperature = ideal_temperature
         super().__init__()
+
+    @property
+    def _params(self)->dict:
+        return {
+            "ideal_temperature": self.ideal_temperature
+        }
 
