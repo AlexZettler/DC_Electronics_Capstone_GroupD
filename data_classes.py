@@ -1,16 +1,27 @@
 import datetime
 import json
-from custom_errors import IncompleteConfigurationError
 
 class Temperature(object):
     def __init__(self, reading: float):
-        self.celsius = reading
+        self._reading = reading
 
     def __str__(self):
         return f"{self.celsius}C"
 
     def __repr__(self):
         return f"Temperature: {str(self)}"
+
+    def __add__(self, other):
+        return Temperature(self.celsius - other.celsius)
+
+    def __sub__(self, other):
+        return Temperature(self.celsius - other.celsius)
+
+    def __gt__(self, other):
+        return self.celsius > other.celsius
+
+    def __lt__(self, other):
+        return self.celsius < other.celsius
 
     @property
     def celsius(self)->float:

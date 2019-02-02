@@ -1,27 +1,27 @@
+import multiprocessing as mp
+
 from data_classes import Temperature
-from system_components import TemperatureMonitor, RoomMonitorController
-
-
-# Setup Logger
-
-# Setup Configuration monitor
-
-# Setup room monitoring
-
-
-room_temperature_sensors = [TemperatureMonitor(Temperature(20)) for i in range(5)]
-print(room_temperature_sensors)
-
-
-rmc = RoomMonitorController(room_temperature_sensors)
-print(rmc.__dict__)
-
-#total_temperature_delta = sum(temp.target_temp for temp in room_temperature_sensors)
+from system_components import TemperatureSensor, TargetTemperatureSensor, ElementMonitor
 
 
 
+def run_temperature_monitoring():
+    element_max_temp = Temperature(65.0)
+    element_min_temp = Temperature(-20.0)
+
+    print(f"{'*'*26}\n* System is starting up! *\n{'*'*26}")
+
+    room_temperature_sensors = [TargetTemperatureSensor(id, Temperature(20)) for id in range(3)]
+
+    print(room_temperature_sensors)
+
+    primary_element = ElementMonitor("prim", element_max_temp, element_min_temp)
+    secondary_element = ElementMonitor("sec", element_max_temp, element_min_temp)
 
 
-# Setup Room Flow Controls
+def run_system():
+    #q = mp.Queue()
+    run_temperature_monitoring()
 
-# Setup Heater
+if __name__ == "__main__":
+    run_system()
