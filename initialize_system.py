@@ -1,8 +1,9 @@
 import multiprocessing as mp
+import system_constants
+from time import sleep
 
 from data_classes import Temperature
-from system_components import TemperatureSensor, TargetTemperatureSensor, ElementMonitor
-
+from sensors import TemperatureSensor, TargetTemperatureSensor, ElementMonitor, Element
 
 
 def run_temperature_monitoring():
@@ -15,9 +16,29 @@ def run_temperature_monitoring():
 
     print(room_temperature_sensors)
 
-    primary_element = ElementMonitor("prim", element_max_temp, element_min_temp)
-    secondary_element = ElementMonitor("sec", element_max_temp, element_min_temp)
+    element = Element(peltier_heating=True, enabled=False)
 
+    primary_element_monitor = ElementMonitor("prim", element, element_max_temp, element_min_temp)
+    secondary_element_monitor = ElementMonitor("sec", element, element_max_temp, element_min_temp)
+
+
+    while True:
+
+        temperature_limit_exceeded = False
+
+        for es in (primary_element_monitor, secondary_element_monitor):
+            es.get_temperature()
+
+            if es.temperature_lock:
+                temperature_limit_exceeded = True
+
+        if temperature_limit_exceeded:
+           element.enabled = False
+
+        for ts in room_temperature_sensors:
+            ts.get_temperature()
+
+        sleep(0.2)
 
 def run_system():
     #q = mp.Queue()
