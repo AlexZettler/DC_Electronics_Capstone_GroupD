@@ -22,8 +22,8 @@ class TargetTemperatureSensor(TemperatureSensor):
         super().__init__(_id)
         self.target_temp = target_temperature
 
-    def get_target_temperature_delta(self):
-        return self.get_temperature() - self.target_temp
+    def calculate_temperature_delta(self, temperature: Temperature):
+        return temperature - self.target_temp
 
 
 class ElementMonitor(TemperatureSensor):
