@@ -7,6 +7,7 @@ from sensors import TemperatureSensor, TargetTemperatureSensor, ElementMonitor, 
 
 
 def run_temperature_monitoring():
+
     element_max_temp = Temperature(65.0)
     element_min_temp = Temperature(-20.0)
 
@@ -14,34 +15,31 @@ def run_temperature_monitoring():
 
     room_temperature_sensors = [TargetTemperatureSensor(id, Temperature(20)) for id in range(3)]
 
-    print(room_temperature_sensors)
-
     element = Element(peltier_heating=True, enabled=False)
 
     primary_element_monitor = ElementMonitor("prim", element, element_max_temp, element_min_temp)
     secondary_element_monitor = ElementMonitor("sec", element, element_max_temp, element_min_temp)
 
-
     while True:
 
-        temperature_limit_exceeded = False
-
         for es in (primary_element_monitor, secondary_element_monitor):
+            # Every sensor is linked to the element
+            # and disables the element in an extreme temperature situation
             es.get_temperature()
 
-            if es.temperature_lock:
-                temperature_limit_exceeded = True
-
-        if temperature_limit_exceeded:
-           element.enabled = False
-
+        #Iterate through each room and get the temperatures
+        room_readings = []
         for ts in room_temperature_sensors:
-            ts.get_temperature()
+            room_readings.append(ts.get_temperature())
 
-        sleep(0.2)
+        # Calculate the system overall target vector based on a pid controller
+        element.generate_new_target_vector(room_readings)
+
+        # Wait a period of time defined
+        sleep(system_constants.system_update_interval)
+
 
 def run_system():
-    #q = mp.Queue()
     run_temperature_monitoring()
 
 if __name__ == "__main__":

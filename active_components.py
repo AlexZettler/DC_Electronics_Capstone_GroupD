@@ -1,4 +1,4 @@
-
+# This file contains class definitions for active components (system outputs)
 
 
 class Element(object):
@@ -32,14 +32,42 @@ class Element(object):
     @enabled.setter
     def enabled(self, val: bool):
         self._enabled = val
+        # Instantly disables the element if the enabled state is set False
         if val is False:
             self.apply_state()
 
-        # Sets the correct pins high and low
-
     def apply_state(self):
         if self.enabled:
-            pass
+            if self.heating:
+                pass
+                # Set cooling pin low
+                # Set heating pin high
+            else:
+                # Set heating pin low
+                # Set cooling pin high
+                pass
 
         else:
-            return None
+            # Set heating pin low
+            # Set cooling pin low
+            pass
+
+    def generate_new_target_vector(self, sensor_deltas: list)->None:
+        #Generate a new target vector based on a pid controller
+
+        p = sum(sensor_deltas)
+        i = 0.0
+        d = 0.0
+
+        out_vector = sum((p,i,d))
+
+        if out_vector > 0.0:
+            self.heating = True
+
+        if out_vector < 0.0:
+            self.cooling = True
+
+        if out_vector == 0.0:
+            pass
+
+
