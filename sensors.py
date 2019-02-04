@@ -27,38 +27,21 @@ class TargetTemperatureSensor(TemperatureSensor):
 
 
 class ElementMonitor(TemperatureSensor):
-    def __init__(self, id, linked_element: Element, max_temp: Temperature, min_temp: Temperature):
+    def __init__(self, id, max_temp: Temperature, min_temp: Temperature):
         super().__init__(id)
         self.max_temp = max_temp
         self.min_temp = min_temp
 
-        # Has a direct link to the element to be have the capability of disable
-        # the element if an extreme temperature is detected.
-        self.linked_element = linked_element
-
-    def get_temperature(self)->Temperature:
-        current_temp = super().get_temperature()
-        try:
-            self.check_temperature_limits(current_temp)
-
-        except OverTemperature:
-            # Should disable whatever temperature action that is taking place until the over condition is fixed
-            self.linked_element.enabled = False
-            self.log_temperature_extreme()
-
-        except UnderTemperature:
-            self.linked_element.enabled = False
-            self.log_temperature_extreme()
-
-        return current_temp
-
     def check_temperature_limits(self, current_temp):
         if current_temp > self.max_temp:
+            self.log_temperature_extreme(current_temp)
             raise OverTemperature
+
         if current_temp < self.min_temp:
+            self.log_temperature_extreme(current_temp)
             raise UnderTemperature
 
-    def log_temperature_extreme(self):
+    def log_temperature_extreme(self, current_temp):
         pass
 
 

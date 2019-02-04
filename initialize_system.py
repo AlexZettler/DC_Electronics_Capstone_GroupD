@@ -1,9 +1,10 @@
-#import multiprocessing as mp
 import system_constants
+from custom_errors import OverTemperature, UnderTemperature
 from time import sleep
 
 from data_classes import Temperature
-from sensors import TargetTemperatureSensor, ElementMonitor, Element
+from sensors import TargetTemperatureSensor, ElementMonitor
+from active_components import Element, RegisterFlowController
 
 
 def run_temperature_monitoring():
@@ -12,20 +13,25 @@ def run_temperature_monitoring():
 
     room_temperature_sensors = [TargetTemperatureSensor(id, Temperature(20)) for id in range(3)]
 
+    primary_element_monitor = ElementMonitor("prim", system_constants.element_max_temp, system_constants.element_min_temp)
+    secondary_element_monitor = ElementMonitor("sec", system_constants.element_max_temp, system_constants.element_min_temp)
+
     element = Element(peltier_heating=True, enabled=False)
+    register_valves = [RegisterFlowController(id) for id in range(3)]
 
-    primary_element_monitor = ElementMonitor("prim", element, system_constants.element_max_temp, system_constants.element_min_temp)
-    secondary_element_monitor = ElementMonitor("sec", element, system_constants.element_max_temp, system_constants.element_min_temp)
+    element.enabled = True
 
-    #Enter the infinite loop!
+    # Enter the infinite loop!
     while True:
 
         for es in (primary_element_monitor, secondary_element_monitor):
-            # Every sensor is linked to the element
-            # and disables the element in an extreme temperature situation
-            es.get_temperature()
+            element_temp = es.get_temperature()
+            try:
+                es.check_temperature_limits(element_temp)
+            except OverTemperature or UnderTemperature:
+                element.enabled = False
 
-        #Iterate through each room and get the temperatures
+        # Iterate through each room and get the temperatures
         room_readings = []
         for ts in room_temperature_sensors:
             # Gets the current room temperature
