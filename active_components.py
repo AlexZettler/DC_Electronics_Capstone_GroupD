@@ -1,4 +1,8 @@
+import RPi.GPIO as IO
+
 # This file contains class definitions for active components (system outputs)
+
+IO.setmode(IO.BCM)
 
 
 class Element(object):
@@ -71,3 +75,21 @@ class Element(object):
             pass
 
 
+class RegisterFlowController(object):
+    freq = 50
+
+    #https://circuitdigest.com/microcontroller-projects/raspberry-pi-pwm-tutorial
+    def __init__(self, pin):
+        ch=0
+
+        IO.setup(pin, IO.OUT)
+        self.pwm_cont = IO.PWM(ch, self.freq)
+
+        # start pwm controller with 0% duty cycle
+        self.pwm_cont.start(0)
+
+    def set_to_pos(self, angle: float):
+        #angle should be 0-180
+        # 1/20 -> 1/10
+        duty_cycle = (1+(angle/180))/20
+        self.pwm_cont.ChangeDutyCycle(duty_cycle)
