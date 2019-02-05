@@ -1,8 +1,8 @@
 from data_classes import Temperature, TemperatureReading
-from active_components import Element
-
+import custom_logger
 from custom_errors import OverTemperature, UnderTemperature
 
+temp_logger = custom_logger.create_measurement_logger()
 
 class TemperatureSensor(object):
     def __init__(self, _id):
@@ -10,12 +10,13 @@ class TemperatureSensor(object):
         raise NotImplementedError
 
     def get_temperature(self)->Temperature:
-        self.log_temperature()
+        temp_reading = None
+        self.log_temperature(temp_reading)
         raise NotImplementedError
+        return temp_reading
 
-    def log_temperature(self):
-        raise NotImplementedError
-
+    def log_temperature(self, temp_reading):
+        temp_logger.info(msg=f"{self.id},{temp_reading}")
 
 class TargetTemperatureSensor(TemperatureSensor):
     def __init__(self, _id, target_temperature: Temperature):
