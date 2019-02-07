@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 
 from PyQt5.QtCore import Qt, pyqtSlot, QMimeData
 
+import PyQt5.QtCore as QtCore
+
 from collections import deque
 
 import datetime
@@ -43,27 +45,37 @@ class VisApp(QMainWindow):
 
         self.statusBar().showMessage("statusbar thing")
 
+        # Setup tabs
+        self.tab_widget = TabDock(self)
 
-        window_switcher = QTabWidget(self)
-        window_switcher.setTabsClosable(False)
 
-        #Setup Graph
 
         configure = ConfigureDock(self, self.colors)
+        self.tab_widget.addTab(configure, "Configure")
+
         visualize = VisualizeDock(self, self.colors)
-
-
-        window_switcher.addTab(configure, "Configure")
-        window_switcher.addTab(visualize, "Visualize")
-        self.setSizePolicy(
-            QSizePolicy.Expanding,
-            QSizePolicy.Fixed,
-        )
-
-
+        self.tab_widget.addTab(visualize, "Visualize")
 
 
         self.show()
+
+    def resize_child_tabs(self):
+        cr = self.contentsRect()
+        self.tab_widget.setGeometry(
+            QtCore.QRect(cr.left(), cr.top(), cr.width(), cr.height()))
+
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.resize_child_tabs()
+
+class TabDock(QTabWidget):
+    def __init__(self, parent):
+        super().__init__(parent)
+        #self.setCornerWidget(None, Qt.TopRightCorner)
+        self.setTabsClosable(False)
+        self.setTabShape(QTabWidget.Rounded)
+
 
 class ConfigureDock(QDockWidget):
 
@@ -93,7 +105,7 @@ class VisualizeDock(QDockWidget):
         btn_regather_data = QPushButton("Reload data!", self)
         #button.setToolTip("I'm a button!")
         btn_regather_data.clicked.connect(m.plot_temperatures)
-        btn_regather_data.setStyleSheet(f"background-color: {colors['prim']}")
+        btn_regather_data.setStyleSheet(f"background-color: {colors['light']}")
         btn_regather_data.move(500,0)
         btn_regather_data.resize(140,100)
 
