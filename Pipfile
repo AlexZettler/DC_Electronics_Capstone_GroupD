@@ -5,6 +5,9 @@ name = "pypi"
 
 [packages]
 nose = "*"
+pyqt5 = "*"
+pyqtdatavisualization = "*"
+matplotlib = "*"
 
 [dev-packages]
 
