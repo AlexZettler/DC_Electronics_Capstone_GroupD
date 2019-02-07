@@ -1,9 +1,11 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QSizePolicy, QPushButton, QAction, QTabWidget, QTabBar
-from PyQt5.QtGui import QIcon, QColor
+from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QSizePolicy, QPushButton, QAction, QTabWidget, QTabBar, QLineEdit, QLabel, QDockWidget
+from PyQt5.QtGui import QIcon, QColor, QDrag
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
+
+from PyQt5.QtCore import Qt, pyqtSlot, QMimeData
 
 from collections import deque
 
@@ -20,11 +22,13 @@ class VisApp(QMainWindow):
         self.width = 640
         self.height = 480
 
-        self.primary_color = color
-        self.dark_color = QColor(color).darker(125).name()
-        self.light_color = QColor(color).lighter(125).name()
+        self.colors = {"prim": color,
+                       "light": QColor(color).lighter(125).name(),
+                       "dark": QColor(color).darker(125).name()
+                       }
 
-        print(self.primary_color, self.light_color, self.dark_color)
+
+        #print(self.primary_color, self.light_color, self.dark_color)
 
         self.initUI()
 
@@ -32,28 +36,67 @@ class VisApp(QMainWindow):
         self.setWindowTitle(self.title)
 
         #Setup color
-        self.setStyleSheet(f"background-color: {self.primary_color}")
+        self.setStyleSheet(f"background-color: {self.colors['prim']}")
 
         # Set positions
         self.setGeometry(self.left, self.top, self.width, self.height)
 
         self.statusBar().showMessage("statusbar thing")
 
-        m = PlotCanvas(self, width=5, height=4, dpi=100, color=self.light_color)
-        m.move(0,0)
 
-        button = QPushButton("Reload data!", self)
-        button.setToolTip("I'm a button!")
-        button.clicked.connect(m.plot_temperatures)
-        button.setStyleSheet(f"background-color: {self.light_color}")
-        button.move(500,0)
-        button.resize(140,100)
+        window_switcher = QTabWidget(self)
+        window_switcher.setTabsClosable(False)
+
+        #Setup Graph
+
+        configure = ConfigureDock(self, self.colors)
+        visualize = VisualizeDock(self, self.colors)
+
+
+        window_switcher.addTab(configure, "Configure")
+        window_switcher.addTab(visualize, "Visualize")
+        self.setSizePolicy(
+            QSizePolicy.Expanding,
+            QSizePolicy.Fixed,
+        )
+
+
+
 
         self.show()
 
+class ConfigureDock(QDockWidget):
 
-    def wasClicked(self):
-        print("Clicked!")
+    def __init__(self, parent, colors):
+        super().__init__(parent)
+
+        text_box = QLineEdit('Drag this', self)
+        text_box.setDragEnabled(True)
+        text_box.move(0, 400)
+        text_box.resize(140, 100)
+
+        label = CustomLabel("Drop here", self)
+        label.move(0, 500)
+        label.resize(140, 100)
+
+
+
+class VisualizeDock(QDockWidget):
+
+    def __init__(self, parent, colors):
+        super().__init__(parent)
+        m = PlotCanvas(self, width=5, height=4, dpi=100, colors=colors)
+        m.move(0,0)
+
+
+        #Setup button
+        btn_regather_data = QPushButton("Reload data!", self)
+        #button.setToolTip("I'm a button!")
+        btn_regather_data.clicked.connect(m.plot_temperatures)
+        btn_regather_data.setStyleSheet(f"background-color: {colors['prim']}")
+        btn_regather_data.move(500,0)
+        btn_regather_data.resize(140,100)
+
 
 
 class PlotCanvas(FigureCanvasQTAgg):
@@ -71,9 +114,9 @@ class PlotCanvas(FigureCanvasQTAgg):
         "C9",
     }
 
-    def __init__(self, parent, width, height, dpi, color):
-        fig = Figure(figsize=(width, height), dpi=dpi, facecolor=color)
-        self.axes = fig.add_subplot(111, facecolor=color)
+    def __init__(self, parent, width, height, dpi, colors):
+        fig = Figure(figsize=(width, height), dpi=dpi, facecolor=colors["prim"])
+        self.axes = fig.add_subplot(111, facecolor=colors["prim"])
         self.axes.set_title("LOL a title")
 
         #self.axes.set_facecolor = color
@@ -112,7 +155,26 @@ class PlotCanvas(FigureCanvasQTAgg):
 
             color_deque.rotate(1)
 
-
-
     def get_data(self):
         return [[random.random() for i in range(25)]for i in range(5)]
+
+
+class CustomLabel(QLabel):
+
+
+    def __init__(self, title, parent):
+        super().__init__(title, parent)
+        self.setAcceptDrops(True)
+
+
+    def dragEnterEvent(self, e):
+        print("drag enter")
+        if e.mimeData().hasFormat('text/plain'):
+
+            e.accept()
+
+        else:
+            e.ignore()
+
+    def dropEvent(self, e):
+        self.setText(e.mimeData().text())
