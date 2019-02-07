@@ -1,12 +1,13 @@
 # This file contains class definitions for active components (system outputs)
 
+
 import RPi.GPIO as IO
 
 import custom_logger
 import time
 
 
-active_logger = custom_logger.create_measurement_logger()
+system_logger = custom_logger.create_system_logger()
 
 #Set Raspberry Pi pinout mode
 IO.setmode(IO.BCM)
@@ -27,12 +28,12 @@ class PID(object):
         self.last_meas_time = None
         self.last_meas_error = None
 
-    def update(self, current_measurement)->float:
+    def update_with_values(self, current_measurement)->float:
 
         current_time = time.time()
         current_error = current_measurement - self.target
 
-        if self.last_meas_time is None:
+        if (self.last_meas_time is None) or (self.last_meas_error is None):
             self.last_meas_time = current_time
             self.last_meas_error = current_error
             return 0.0
@@ -49,12 +50,13 @@ class PID(object):
 
         self.last_meas_time = current_time
 
-        return (self._p * p_term + self._i * self.cumulative_i + d_term + self._b)
+        return self._p * p_term + self._i * self.cumulative_i + d_term + self._b
 
 
-class Element(object):
+class Element(PID):
 
     def __init__(self, peltier_heating, enabled: bool):
+        super().__init__(target=0.0, p=0.0, i=0.0, d=0.0, b=0.0)
         self.heating = peltier_heating
         self.enabled = enabled
 
@@ -90,30 +92,30 @@ class Element(object):
     def apply_state(self):
         if self.enabled:
             if self.heating:
-                active_logger.info("Is now heating")
+                system_logger.info("Is now heating")
                 pass
-                # Set cooling pin low
-                # Set heating pin high
+                # todo:  Set cooling pin low
+                # todo:  Set heating pin high
             else:
-                active_logger.info("Is now cooling")
-                # Set heating pin low
-                # Set cooling pin high
+                system_logger.info("Is now cooling")
+                # todo:  Set heating pin low
+                # todo:  Set cooling pin high
                 pass
 
         else:
-            active_logger.info("Is now disabled")
-            # Set heating pin low
-            # Set cooling pin low
+            system_logger.info("Is now disabled")
+            # todo: Set heating pin low
+            # todo: Set cooling pin low
             pass
 
-    def generate_new_target_vector(self, sensor_deltas: list)->None:
+    def generate_new_target_vector(self, main_temp, sensor_deltas: list)->None:
         # Generate a new target vector based on a pid controller
 
-        p = sum(sensor_deltas)
-        i = 0.0
-        d = 0.0
+        #out_vector = self.update_with_values()
 
-        out_vector = sum((p,i,d))
+
+        out_vector = sum(sensor_deltas)
+
 
         if out_vector > 0.0:
             self.heating = True
@@ -126,11 +128,14 @@ class Element(object):
 
 class RegisterFlowController(object):
     freq = 50.0
-    #https://circuitdigest.com/microcontroller-projects/raspberry-pi-pwm-tutorial
+    # https://circuitdigest.com/microcontroller-projects/raspberry-pi-pwm-tutorial
     def __init__(self, id, pin):
         self.id = id
         self._pin = pin
 
+        self.logger = custom_logger.create_output_logger(id)
+
+        #todo: set channel up
         ch=None
         self.last_pos = 0.0
 
@@ -151,11 +156,11 @@ class RegisterFlowController(object):
 
             if angle_delta != 0.0:
 
-
+                # Generate a signal between (1 and 2) of it's duty cycle
                 duty_cycle = (1 + (angle / 180)) / 20
 
                 self.pwm_cont.ChangeDutyCycle(duty_cycle)
-                self.log_new_pos(angle)
+                self.logger.info(f"{angle}, {angle_delta}")
                 self.last_pos = angle
 
             else:
@@ -163,9 +168,4 @@ class RegisterFlowController(object):
             # No change in position
 
         else:
-            pass
-            print("wtf willis")
-            # this is critical and should be logged
-
-    def log_new_pos(self, angle):
-        active_logger.info(angle)
+            system_logger.warning(f"Device with id {id} tried to set it's position to '{angle}' which is outside of it's operating range")
