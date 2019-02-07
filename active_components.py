@@ -1,14 +1,55 @@
+# This file contains class definitions for active components (system outputs)
+
 import RPi.GPIO as IO
 
 import custom_logger
-
-# This file contains class definitions for active components (system outputs)
+import time
 
 
 active_logger = custom_logger.create_measurement_logger()
 
 #Set Raspberry Pi pinout mode
 IO.setmode(IO.BCM)
+
+
+class PID(object):
+    # Based loosely on: https://github.com/ivmech/ivPID/blob/master/PID.py
+
+    def __init__(self, target, p, i, d, b):
+        self.target = target
+
+        self._p = p
+        self._i = i
+        self._d = d
+        self._b = b
+
+        self.cumulative_i = 0.0
+        self.last_meas_time = None
+        self.last_meas_error = None
+
+    def update(self, current_measurement)->float:
+
+        current_time = time.time()
+        current_error = current_measurement - self.target
+
+        if self.last_meas_time is None:
+            self.last_meas_time = current_time
+            self.last_meas_error = current_error
+            return 0.0
+
+        delta_time = current_time - self.last_meas_time
+        delta_error = current_error - self.last_meas_error
+
+        p_term = current_error
+        # todo: Windup guard is a thing to worry about
+        self.cumulative_i += delta_error * delta_time
+        d_term = delta_error/delta_time
+
+        # todo: log this to a debug log
+
+        self.last_meas_time = current_time
+
+        return (self._p * p_term + self._i * self.cumulative_i + d_term + self._b)
 
 
 class Element(object):
