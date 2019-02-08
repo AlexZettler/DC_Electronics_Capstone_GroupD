@@ -28,7 +28,7 @@ class PID(object):
         self.last_meas_time = None
         self.last_meas_error = None
 
-    def update_with_values(self, current_measurement)->float:
+    def get_update_vector(self, current_measurement)->float:
 
         current_time = time.time()
         current_error = current_measurement - self.target
@@ -111,11 +111,10 @@ class Element(PID):
     def generate_new_target_vector(self, main_temp, sensor_deltas: list)->None:
         # Generate a new target vector based on a pid controller
 
-        #out_vector = self.update_with_values()
+        # out_vector = self.update_with_values()
 
-
+        # todo: implement PID controller
         out_vector = sum(sensor_deltas)
-
 
         if out_vector > 0.0:
             self.heating = True

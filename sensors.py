@@ -4,13 +4,14 @@ from custom_errors import OverTemperature, UnderTemperature
 
 system_logger = custom_logger.create_system_logger()
 
+
 class TemperatureSensor(object):
     def __init__(self, _id):
         self.id = _id
         self.logger = custom_logger.create_measurement_logger(_id)
 
     def get_temperature(self)->Temperature:
-        #todo: get the temperature reading
+        # todo: get the temperature reading
         temp_reading = None
         self.log_temperature(temp_reading)
         return temp_reading

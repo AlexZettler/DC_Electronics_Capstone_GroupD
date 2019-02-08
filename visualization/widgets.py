@@ -111,7 +111,6 @@ class PlotCanvas(FigureCanvasQTAgg):
 
         #print(self.get_devices_from_log_directory("../log"))
 
-
     def get_rand_data(self):
         return [[random.random() for i in range(25)]for i in range(5)]
 
@@ -131,11 +130,9 @@ class PlotCanvas(FigureCanvasQTAgg):
 
 class CustomLabel(QLabel):
 
-
     def __init__(self, title, parent):
         super().__init__(title, parent)
         self.setAcceptDrops(True)
-
 
     def dragEnterEvent(self, e):
         print("drag enter")
