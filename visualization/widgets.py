@@ -87,7 +87,7 @@ class PlotCanvas(FigureCanvasQTAgg):
 
         self.updateGeometry()
 
-        self.get_devices_from_log_directory("../log/")
+        print(self.get_device_types())
 
 
     def plot(self, data, color):
@@ -109,7 +109,7 @@ class PlotCanvas(FigureCanvasQTAgg):
             self.plot(d, color_deque[0])
             color_deque.rotate(1)
 
-        print(self.get_devices_from_log_directory("../log"))
+        #print(self.get_devices_from_log_directory("../log"))
 
 
     def get_rand_data(self):
