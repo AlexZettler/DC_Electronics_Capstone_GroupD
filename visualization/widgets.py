@@ -1,5 +1,5 @@
 
-from PyQt5.QtWidgets import QSizePolicy, QPushButton, QAction, QTabWidget, QTabBar, QLineEdit, QLabel, QDockWidget, QApplication, QWidget
+from PyQt5.QtWidgets import QSizePolicy, QPushButton, QTabWidget, QTabBar, QLineEdit, QLabel, QDockWidget, QApplication, QWidget, QScrollArea
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -37,21 +37,64 @@ class ConfigureDock(QDockWidget):
         label.resize(140, 100)
 
 
-class VisualizeDock(QDockWidget):
+class VisualizeTab(QDockWidget):
 
     def __init__(self, parent, colors):
         super().__init__(parent)
-        m = PlotCanvas(self, width=5, height=4, dpi=100, colors=colors)
-        m.move(0,0)
+        self.plot_list = PlotList(self, (500,400), colors=colors)
+
+        #m = PlotCanvas(self, width=5, height=4, dpi=100, colors=colors)
+
+        self.plot_list.add_plot()
 
 
-        #Setup button
+        # Setup button
         btn_regather_data = QPushButton("Reload data!", self)
-        #button.setToolTip("I'm a button!")
-        btn_regather_data.clicked.connect(m.plot_temperatures)
+        # button.setToolTip("I'm a button!")
+        btn_regather_data.clicked.connect(self.plot_list.managed_plots[0].plot_canvas.plot_temperatures)
         btn_regather_data.setStyleSheet(f"background-color: {colors['light']}")
         btn_regather_data.move(500,0)
         btn_regather_data.resize(140,100)
+
+
+class PlotList(QScrollArea):
+    def __init__(self, parent, size, colors):
+        super().__init__(parent)
+        self.colors = colors
+        self.width,self.height = size
+        self.managed_plots = []
+        self.arrange_plots()
+
+    def add_plot(self):
+        self.index_to_add = len(self.managed_plots)
+        p = PlotWidget(
+            parent=self,
+            size=(self.width, self.height),
+            colors=self.colors
+        )
+        p.move(0, self.height*self.index_to_add)
+        self.managed_plots.append(p)
+
+    def arrange_plots(self):
+        y_total = 0.0
+        for i,p in zip(range(len(self.managed_plots)),self.managed_plots):
+            p.move(0,y_total)
+            y_total += self.height
+
+
+class PlotWidget(QWidget):
+    def __init__(self, parent, size, colors):
+        super().__init__(parent)
+        self.dpi = 100
+        self.plot_canvas = PlotCanvas(self, width=size[0]/self.dpi, height=size[0]/self.dpi, dpi=self.dpi, colors=colors)
+
+    @property
+    def axes(self):
+        return self.plot_canvas.axes
+
+    @property
+    def figure(self):
+        return self.plot_canvas.figure
 
 
 class PlotCanvas(FigureCanvasQTAgg):
@@ -70,13 +113,11 @@ class PlotCanvas(FigureCanvasQTAgg):
     }
 
     def __init__(self, parent, width, height, dpi, colors):
-        fig = Figure(figsize=(width, height), dpi=dpi, facecolor=colors["prim"])
-        self.axes = fig.add_subplot(111, facecolor=colors["prim"])
+        self.figure = Figure(figsize=(width, height), dpi=dpi, facecolor=colors["prim"])
+        self.axes = self.figure.add_subplot(111, facecolor=colors["prim"])
         self.axes.set_title("LOL a title")
 
-        #self.axes.set_facecolor = color
-
-        FigureCanvasQTAgg.__init__(self, fig)
+        FigureCanvasQTAgg.__init__(self, self.figure)
         self.setParent(parent)
 
         FigureCanvasQTAgg.setSizePolicy(

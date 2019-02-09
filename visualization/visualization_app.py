@@ -53,7 +53,7 @@ class VisApp(QMainWindow):
         configure = ConfigureDock(self, self.colors)
         self.tab_widget.addTab(configure, "Configure")
 
-        visualize = VisualizeDock(self, self.colors)
+        visualize = VisualizeTab(self, self.colors)
         self.tab_widget.addTab(visualize, "Visualize")
 
 
