@@ -6,23 +6,17 @@ import PyQt5.QtCore as QtCore
 import os
 import os.path
 
-
+from visualization.settings import colors
 from visualization.widgets import *
 
 class VisApp(QMainWindow):
-    def __init__(self, color):
+    def __init__(self):
         super().__init__()
         self.title = "Visualization!"
-        self.left = 10
-        self.top = 30
+        self.left = 100
+        self.top = 100
         self.width = 640
         self.height = 480
-
-        self.colors = {
-            "prim": color,
-            "light": QColor(color).lighter(125).name(),
-            "dark": QColor(color).darker(125).name()
-        }
 
 
         #print(self.primary_color, self.light_color, self.dark_color)
@@ -33,7 +27,7 @@ class VisApp(QMainWindow):
         self.setWindowTitle(self.title)
 
         #Setup color
-        self.setStyleSheet(f"background-color: {self.colors['prim']}")
+        self.setStyleSheet(f"background-color: {colors['prim']}")
 
         # Set positions
         self.setGeometry(self.left, self.top, self.width, self.height)
@@ -41,13 +35,13 @@ class VisApp(QMainWindow):
         self.statusBar().showMessage("statusbar thing")
 
         # Setup tabs
-        self.tab_widget = TabDock(self, self.colors)
+        self.tab_widget = TabDock(self)
 
 
-        configure = ConfigureTab(self, self.colors)
+        configure = ConfigureTab(self)
         self.tab_widget.addTab(configure, "Configure")
 
-        visualize = VisualizeTab(self, self.colors)
+        visualize = VisualizeTab(self)
         self.tab_widget.addTab(visualize, "Visualize")
 
 
