@@ -101,11 +101,11 @@ class PlotCanvas(FigureCanvasQTAgg):
     color_options = {"C0","C1","C2","C3","C4","C5","C6","C7","C8","C9"}
 
     def __init__(self, parent, width, height, dpi, colors):
-        fig = Figure(figsize=(width, height), dpi=dpi, facecolor=colors["prim"])
-        self.axes = fig.add_subplot(111, facecolor=colors["prim"])
+        self.figure = Figure(figsize=(width, height), dpi=dpi, facecolor=colors["prim"])
+        self.axes = self.figure.add_subplot(111, facecolor=colors["prim"])
         self.axes.set_title("LOL a title")
 
-        FigureCanvasQTAgg.__init__(self, fig)
+        FigureCanvasQTAgg.__init__(self, self.figure)
         self.setParent(parent)
 
         FigureCanvasQTAgg.setSizePolicy(
