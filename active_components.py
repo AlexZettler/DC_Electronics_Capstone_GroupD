@@ -93,20 +93,18 @@ class Element(PID):
         if self.enabled:
             if self.heating:
                 system_logger.info("Is now heating")
-                pass
                 # todo:  Set cooling pin low
                 # todo:  Set heating pin high
             else:
                 system_logger.info("Is now cooling")
                 # todo:  Set heating pin low
                 # todo:  Set cooling pin high
-                pass
 
         else:
             system_logger.info("Is now disabled")
             # todo: Set heating pin low
             # todo: Set cooling pin low
-            pass
+
 
     def generate_new_target_vector(self, main_temp, sensor_deltas: list)->None:
         # Generate a new target vector based on a pid controller

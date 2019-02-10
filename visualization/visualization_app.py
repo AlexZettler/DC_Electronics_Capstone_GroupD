@@ -3,11 +3,6 @@ from PyQt5.QtGui import QIcon, QColor, QDrag
 from PyQt5.QtCore import Qt, pyqtSlot, QMimeData
 import PyQt5.QtCore as QtCore
 
-
-
-import matplotlib.pyplot as plt
-
-
 import os
 import os.path
 
@@ -17,7 +12,7 @@ from visualization.widgets import *
 class VisApp(QMainWindow):
     def __init__(self, color):
         super().__init__()
-        self.title = "visualization!"
+        self.title = "Visualization!"
         self.left = 10
         self.top = 30
         self.width = 640
@@ -49,11 +44,10 @@ class VisApp(QMainWindow):
         self.tab_widget = TabDock(self, self.colors)
 
 
-
-        configure = ConfigureDock(self, self.colors)
+        configure = ConfigureTab(self, self.colors)
         self.tab_widget.addTab(configure, "Configure")
 
-        visualize = VisualizeDock(self, self.colors)
+        visualize = VisualizeTab(self, self.colors)
         self.tab_widget.addTab(visualize, "Visualize")
 
 

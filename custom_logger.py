@@ -129,13 +129,11 @@ def get_time_filtered_readings(csv_file_path, time_range: tuple):
 def get_data_from_time_delta(file_name, time_delta):
     # Test temperature reading
     current_time = datetime.datetime.now()
-
     previous_time = current_time - time_delta
 
-    print(f"Printing data logged in the last minute:")
     for time,value in get_time_filtered_readings(file_name,(current_time, previous_time)):
         yield (time, value)
-
+    raise StopIteration
 
 
 if __name__ == "__main__":
@@ -148,10 +146,12 @@ if __name__ == "__main__":
     for i in range(5):
         dummy_sensor_logger.info(i)
 
-    # todo: you finished here, need to format tuples to print
-    data = get_data_from_time_delta(file_name=file_name, time_delta=datetime.timedelta(minutes=1, seconds=0))
-    f_data = '\n'.join([*data])
-    print(f_data)
+    td = datetime.timedelta(minutes=1, seconds=0)
+    print(f"Printing data logged in the last {td}:")
+
+    data = get_data_from_time_delta(file_name=file_name, time_delta=td)
+    f_data = '\n'.join([f"{time}: {value}"for time,value in data])
+    print(f"Data is as follows:\n{f_data}")
 
 
 

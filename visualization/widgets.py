@@ -1,5 +1,5 @@
 
-from PyQt5.QtWidgets import QSizePolicy, QPushButton, QAction, QTabWidget, QTabBar, QLineEdit, QLabel, QDockWidget, QApplication, QWidget
+from PyQt5.QtWidgets import QSizePolicy, QPushButton, QAction, QTabWidget, QTabBar, QLineEdit, QLabel, QDockWidget, QApplication, QWidget, QFrame
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -22,59 +22,88 @@ class TabDock(QTabWidget):
         #self.setStyleSheet(f"background-color: {colors['light']}")
 
 
-class ConfigureDock(QDockWidget):
+class ConfigureTab(QWidget):
 
     def __init__(self, parent, colors):
         super().__init__(parent)
 
         text_box = QLineEdit('Drag this', self)
         text_box.setDragEnabled(True)
-        text_box.move(0, 400)
-        text_box.resize(140, 100)
+        text_box.move(10, 10)
+        text_box.resize(100, 60)
 
         label = CustomLabel("Drop here", self)
-        label.move(0, 500)
-        label.resize(140, 100)
+        label.move(10, 70)
+        label.resize(100, 60)
 
 
-class VisualizeDock(QDockWidget):
+class VisualizeTab(QWidget):
 
     def __init__(self, parent, colors):
         super().__init__(parent)
-        m = PlotCanvas(self, width=5, height=4, dpi=100, colors=colors)
-        m.move(0,0)
+        #m = PlotCanvas(self, width=5, height=4, dpi=100, colors=colors)
+        #m.move(0,0)
 
+        n = GraphWidget(self,400,300,colors)
+        #n.resize(640,480)
+        #n.move(20,20)
+
+        #n.graph.move(0,0)
 
         #Setup button
         btn_regather_data = QPushButton("Reload data!", self)
         #button.setToolTip("I'm a button!")
-        btn_regather_data.clicked.connect(m.plot_temperatures)
+
+        btn_regather_data.clicked.connect(n.graph.plot_temperatures)
+        #btn_regather_data.clicked.connect(m.plot_temperatures)
+
         btn_regather_data.setStyleSheet(f"background-color: {colors['light']}")
         btn_regather_data.move(500,0)
         btn_regather_data.resize(140,100)
 
+class GraphWidget(QFrame):
+    frame_width = 3
+    data_list_box_size = (100, 20)
+
+    def __init__(self, parent, width, height, colors):
+        super().__init__(parent)
+        self.setFrameStyle(QFrame.Box + QFrame.Raised)
+        self.setLineWidth(self.frame_width)
+
+        self.graph = PlotCanvas(self,
+                                width=width-2*self.frame_width,
+                                height=height-2*self.frame_width,
+                                dpi=100, colors=colors)
+
+        self.resize(width,height)
+        self.graph.move(self.frame_width*2,self.frame_width*2)
+
+
+
+    def resize(self, *__args):
+
+        if len(__args) == 2:
+            super().resize(*__args)
+            self.graph.resize(
+                __args[0]-self.data_list_box_size[0]-4*self.frame_width,
+                __args[1]-4*self.frame_width)
+
+            #width = width - 2 * self.frame_width, height = height - 2 * self.frame_width, dpi = 100, colors = colors
+
+            #self.data_draggable_box
+
+        else:
+            raise ValueError
+
 
 class PlotCanvas(FigureCanvasQTAgg):
 
-    color_options = {
-        "C0",
-        "C1",
-        "C2",
-        "C3",
-        "C4",
-        "C5",
-        "C6",
-        "C7",
-        "C8",
-        "C9",
-    }
+    color_options = {"C0","C1","C2","C3","C4","C5","C6","C7","C8","C9"}
 
     def __init__(self, parent, width, height, dpi, colors):
         fig = Figure(figsize=(width, height), dpi=dpi, facecolor=colors["prim"])
         self.axes = fig.add_subplot(111, facecolor=colors["prim"])
         self.axes.set_title("LOL a title")
-
-        #self.axes.set_facecolor = color
 
         FigureCanvasQTAgg.__init__(self, fig)
         self.setParent(parent)
@@ -87,7 +116,7 @@ class PlotCanvas(FigureCanvasQTAgg):
 
         self.updateGeometry()
 
-        print(self.get_device_types())
+        #print(self.get_device_types())
 
 
     def plot(self, data, color):
@@ -127,6 +156,7 @@ class PlotCanvas(FigureCanvasQTAgg):
 
         #for name, path in cl.log_directories.items():
         #    pass
+
 
 class CustomLabel(QLabel):
 
