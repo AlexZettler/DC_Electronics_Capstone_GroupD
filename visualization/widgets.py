@@ -2,15 +2,7 @@ from PyQt5.QtWidgets import QSizePolicy, QPushButton, QAction, QTabWidget, QTabB
 
 from visualization.MPLWidget import MPLWidget
 from visualization.settings import colors
-
-import custom_logger as cl
-
-import os
-import os.path
-import datetime
-import random
-from collections import deque
-
+from visualization.visualization_data_gather import get_rand_data
 
 
 
@@ -44,99 +36,55 @@ class VisualizeTab(QWidget):
     def __init__(self, parent):
         super().__init__(parent)
         self.h_layout = QHBoxLayout()
-        self.graph_area = GraphScrollArea(self)
-        self.graph_config_layout = GraphSetupWidget()
 
+        self.graph_area = GraphScrollWidget(self)
         self.h_layout.addWidget(self.graph_area)
+
+        self.graph_config_layout = GraphSetupWidget(self, self.graph_area.scroll_content)
         self.h_layout.addWidget(self.graph_config_layout)
+
         self.setLayout(self.h_layout)
-
-        #GraphScrollArea
-
-        #m.move(0,0)
-
-        #n = GraphWidget(self,400,300,colors)
-        #n.resize(640,480)
-        #n.move(20,20)
-
-        #gsa = GraphScrollArea(self, colors)
-        #gsa.resize(500,500)
-
-        #gsa.add_graph(MPLWidget(self, 400, 300, colors))
-        #gsa.add_graph(MPLWidget(self, 400, 300, colors))
-
-        #gsa.add_graph(GraphWidget(self, 400, 300, colors))
-        #gsa.add_graph(GraphWidget(self, 400, 300, colors))
-        #gsa.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-
-
-
-    def add_graph(self):
-        m = MPLWidget(self)
-        #self.
-        pass
 
 
 class GraphSetupWidget(QFrame):
     frame_width=3
 
-    def __init__(self, parent=None):
+    def __init__(self, parent, glw):
         super().__init__(parent)
         self.b_layout = QVBoxLayout()
+        self.graph_list_widget = glw
 
         self.setFrameStyle(QFrame.Box + QFrame.Raised)
         self.setLineWidth(self.frame_width)
 
         # Add new Graph button
         self.btn_add_graph = QPushButton("Add another graph!")
+        self.btn_add_graph.clicked.connect(lambda: self.graph_list_widget.add_graph(MPLWidget()),)
         self.b_layout.addWidget(self.btn_add_graph)
 
         # Add new Graph button
         self.regather_data = QPushButton("Regather Data!")
+        self.regather_data.clicked.connect(lambda: self.graph_list_widget.regather_graph_data())
         self.b_layout.addWidget(self.regather_data)
 
+        #Apply layout
         self.setLayout(self.b_layout)
 
-        #Setup button
-        #btn_regather_data = QPushButton("Reload data!", self)
-        #btn_regather_data.setToolTip("Lets reload some data!")
 
-        #btn_regather_data.clicked.connect(n.graph.plot_temperatures)
-        #btn_regather_data.clicked.connect(gsa.graph_list.regather_graph_data)
+class GraphScrollWidget(QScrollArea):
 
-        #btn_regather_data.setStyleSheet(f"background-color: {colors['light']}")
-        #btn_regather_data.move(500,0)
-        #btn_regather_data.resize(140,100)
-
-
-class GraphScrollArea(QWidget):
-    #todo: scroll no longer feels like an english word, I should come back to this later
     def __init__(self, parent):
         super().__init__(parent)
+        self.setWidgetResizable(True)
 
-        self.scroll_area = QScrollArea(self)
+        self.scroll_content = GraphListWidget(self)
+        scroll_layout = QVBoxLayout(self.scroll_content)
+        self.scroll_content.setLayout(scroll_layout)
 
-        scroll_box = QVBoxLayout(self)
-        scroll_box.addWidget(self.scroll_area)
-
-
-        self.setLayout(scroll_box)
-
-        self.scroll_area_layout = QVBoxLayout(scroll_box)
-
-        self.scroll_area_layout.addWidget(MPLWidget(self))
-        #scroll_box.
-
-        self.graph_list_widget = GraphListWidget(self)
-
-        #self.scroll_area.setVerticalScrollBar()
-
-        #self.scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-        self.scroll_area.resize(500,500)
-        self.scroll_area.setWidget(self.graph_list_widget)
+        self.setWidget(self.scroll_content)
 
     def add_graph(self, graph):
-        self.graph_list_widget.add_graph(graph)
+        self.scroll_area_layout.add_graph(graph)
         #self.scroll_area.setWidget(self.graph_list_widget)
 
     @property
@@ -148,16 +96,7 @@ class GraphListWidget(QWidget):
     def __init__(self, parent):
         super().__init__(parent)
         self.graphs = []
-
         self.box = QVBoxLayout()
-        #self.setLayout(self.box)
-
-        #btn_lol = QPushButton("LOL", self)
-        #sample_graph = MPLWidget(self)
-
-        #self.box.addWidget(btn_lol)
-        #self.box.addWidget(sample_graph)
-
         self.setLayout(self.box)
 
     def add_graph(self, graph):
@@ -171,17 +110,13 @@ class GraphListWidget(QWidget):
             raise TypeError
 
     def regather_graph_data(self):
+
         for graph in self.graphs:
-            graph.plot_temperatures()
+            data = get_rand_data()
+            graph.multi_plot(data)
 
-
-
-
-        #return {os.path.dirname(i):os.path.abspath(i) for i in glob.iglob(base_path, recursive=False)}
-
-
-        #for name, path in cl.log_directories.items():
-        #    pass
+    def plot_graph_index_0(self):
+        self.graphs[0].plot([i for i in range(10)])
 
 
 class CustomLabel(QLabel):

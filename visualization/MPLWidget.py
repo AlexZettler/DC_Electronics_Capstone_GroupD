@@ -1,16 +1,16 @@
 
-from PyQt5.QtWidgets import QSizePolicy, QFrame, QScrollArea, QVBoxLayout
+from PyQt5.QtWidgets import QSizePolicy, QFrame, QVBoxLayout
 
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as Canvas
 from matplotlib.figure import Figure
 
-import custom_logger as cl
+
 
 import datetime
-import random
 from collections import deque
 
+from visualization.visualization_data_gather import get_rand_data
 from visualization.settings import colors
 
 
@@ -25,31 +25,36 @@ class MPLWidget(QFrame):
         self.box.addWidget(self.canvas)
         self.setLayout(self.box)
 
+        self.setMinimumSize(400,300)
         self.setFrameStyle(QFrame.Box + QFrame.Raised)
         self.setLineWidth(self.frame_width)
 
+    @property
+    def figure(self):
+        return self.canvas.fig
 
-        #self.canvas.move(self.frame_width * 2, self.frame_width * 2)
+    @property
+    def axes(self):
+        return self.canvas.ax
 
-    """
-    def resize(self, *__args):
+    @property
+    def title(self):
+        return self.axes.get_title()
 
-        if len(__args) == 2:
-            super().resize(*__args)
-            self.canvas.resize(
-                __args[0]-self.data_list_box_size[0]-4*self.frame_width,
-                __args[1]-4*self.frame_width)
+    @title.setter
+    def title(self, value):
+        self.axes.set_title(value)
 
-            #width = width - 2 * self.frame_width, height = height - 2 * self.frame_width, dpi = 100, colors = colors
+    def plot(self, data, color):
+        self.canvas.plot(data=data, color=color)
 
-            #self.data_draggable_box
-
-        else:
-            raise ValueError
-    """
+    def multi_plot(self, data):
+        self.canvas.multi_plot(data=data)
 
 class MPLCanvas(Canvas):
-
+    """
+    A matplotlib canvas to be interfaced with
+    """
     color_options = {"C0","C1","C2","C3","C4","C5","C6","C7","C8","C9"}
 
     def __init__(self):
@@ -62,15 +67,13 @@ class MPLCanvas(Canvas):
         self.updateGeometry()
 
     def plot(self, data, color):
-        #ax = self.figure.add_subplot(111)
         self.ax.plot(data, color=color)
         self.draw()
 
-    def plot_temperatures(self):
+    def multi_plot(self, data):
         self.ax.clear()
-        data = get_rand_data()
 
-        #Custom color cycling
+        # for custom color cycling
         color_deque = deque(self.color_options)
 
         self.ax.set_title(f"Data({datetime.datetime.now().strftime('%H:%M:%S')})")
@@ -78,15 +81,5 @@ class MPLCanvas(Canvas):
             self.plot(d, color_deque[0])
             color_deque.rotate(1)
 
-        #print(self.get_devices_from_log_directory("../log"))
-
-
-    def get_device_types(self):
-        return cl.log_directories.keys()
-
-    def get_device_files_of_type(self, device_type):
-        return cl.iget_device_files_from_log_directory(device_type)
-
-
-def get_rand_data():
-    return [[random.random() for i in range(25)]for i in range(5)]
+    def plot_multi_test(self):
+        self.multi_plot(get_rand_data())
