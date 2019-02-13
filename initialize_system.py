@@ -6,7 +6,7 @@ from time import sleep
 import datetime
 
 from data_classes import Temperature
-from sensors import TargetTemperatureSensor, ElementMonitor, TemperatureSensor
+from sensors import TargetTemperatureSensor, ElementSensor, TemperatureSensor
 from active_components import Element, RegisterFlowController
 
 
@@ -23,8 +23,8 @@ def run_system():
     room_temperature_sensors = [TargetTemperatureSensor(id, Temperature(20)) for id in range(3)]
 
     # Setup element sensors
-    primary_element_monitor = ElementMonitor("prim", system_constants.element_max_temp, system_constants.element_min_temp)
-    secondary_element_monitor = ElementMonitor("sec", system_constants.element_max_temp, system_constants.element_min_temp)
+    primary_element_monitor = ElementSensor("prim", system_constants.element_max_temp, system_constants.element_min_temp)
+    secondary_element_monitor = ElementSensor("sec", system_constants.element_max_temp, system_constants.element_min_temp)
 
     # Set up our active components
     element = Element(peltier_heating=True, enabled=False)

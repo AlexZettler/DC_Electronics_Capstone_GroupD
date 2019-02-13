@@ -28,7 +28,7 @@ class TargetTemperatureSensor(TemperatureSensor):
         return temperature - self.target_temp
 
 
-class ElementMonitor(TemperatureSensor):
+class ElementSensor(TemperatureSensor):
     def __init__(self, id, max_temp: Temperature, min_temp: Temperature):
         super().__init__(id)
         self.max_temp = max_temp
