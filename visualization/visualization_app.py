@@ -1,13 +1,9 @@
 from PyQt5.QtWidgets import QMainWindow
-from PyQt5.QtGui import QIcon, QColor, QDrag
-from PyQt5.QtCore import Qt, pyqtSlot, QMimeData
 import PyQt5.QtCore as QtCore
-
-import os
-import os.path
 
 from visualization.settings import colors
 from visualization.widgets import *
+
 
 class VisApp(QMainWindow):
     def __init__(self):
@@ -17,9 +13,6 @@ class VisApp(QMainWindow):
         self.top = 100
         self.width = 640
         self.height = 480
-
-
-        #print(self.primary_color, self.light_color, self.dark_color)
 
         self.initUI()
 
@@ -37,14 +30,15 @@ class VisApp(QMainWindow):
         # Setup tabs
         self.tab_widget = TabDock(self)
 
-
+        # Setup configure widget
         configure = ConfigureTab(self)
         self.tab_widget.addTab(configure, "Configure")
 
+        # Setup visualize widget
         visualize = VisualizeTab(self)
         self.tab_widget.addTab(visualize, "Visualize")
 
-
+        # Display the app
         self.show()
 
     def resize_child_tabs(self):
@@ -52,8 +46,6 @@ class VisApp(QMainWindow):
         self.tab_widget.setGeometry(
             QtCore.QRect(cr.left(), cr.top(), cr.width(), cr.height()))
 
-
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self.resize_child_tabs()
-

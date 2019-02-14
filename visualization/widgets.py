@@ -1,8 +1,7 @@
-from PyQt5.QtWidgets import QSizePolicy, QPushButton, QAction, QTabWidget, QTabBar, QLineEdit, QLabel, QWidget, QFrame, QScrollArea, QVBoxLayout,QHBoxLayout
+from PyQt5.QtWidgets import QPushButton, QTabWidget, QLineEdit, QLabel, QWidget, QFrame, QScrollArea, QVBoxLayout,QHBoxLayout
 
 from visualization.MPLWidget import MPLWidget
-from visualization.settings import colors
-from visualization.visualization_data_gather import get_rand_data
+from data_handling.data_retrieval import get_rand_data
 import PyQt5.sip as sip
 
 
@@ -21,7 +20,6 @@ class ConfigureTab(QWidget):
     """
     The main configuration tab used to configure aspects of the system
     """
-
     def __init__(self, parent):
         super().__init__(parent)
 
@@ -40,7 +38,6 @@ class VisualizeTab(QWidget):
     A tab for visualizing data over a period of time
     """
     # https://www.youtube.com/watch?v=ykUhAp8yTFE
-
     def __init__(self, parent):
         super().__init__(parent)
         self.h_layout = QHBoxLayout()
@@ -61,7 +58,6 @@ class GraphSetupWidget(QFrame):
     """
     A widget for setting up the graphs
     """
-
     frame_width=3
 
     def __init__(self, parent, glw):
@@ -112,7 +108,6 @@ class GraphListWidget(QWidget):
     """
     A widget for managing many different graphs
     """
-
     def __init__(self, parent):
         super().__init__(parent)
         # An ID to assign to next value given to graph instances
@@ -218,4 +213,3 @@ class CustomLabel(QLabel):
 
     def dropEvent(self, e):
         self.setText(e.mimeData().text())
-

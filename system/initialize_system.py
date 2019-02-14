@@ -1,13 +1,12 @@
-import system_constants
-import logging
-from custom_errors import OverTemperature, UnderTemperature
-import custom_logger
+from system import system_constants
+from data_handling.custom_errors import OverTemperature, UnderTemperature
+from data_handling import custom_logger
 from time import sleep
 import datetime
 
-from data_classes import Temperature
-from sensors import TargetTemperatureSensor, ElementSensor, TemperatureSensor
-from active_components import Element, RegisterFlowController
+from data_handling.data_classes import Temperature
+from system.sensors import TargetTemperatureSensor, ElementSensor, TemperatureSensor
+from system.active_components import Element, RegisterFlowController
 
 
 

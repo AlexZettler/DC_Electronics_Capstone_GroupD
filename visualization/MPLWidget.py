@@ -1,4 +1,3 @@
-
 from PyQt5.QtWidgets import QSizePolicy, QFrame, QVBoxLayout
 
 
@@ -10,7 +9,7 @@ from matplotlib.figure import Figure
 import datetime
 from collections import deque
 
-from visualization.visualization_data_gather import get_rand_data
+from data_handling.data_retrieval import get_rand_data
 from visualization.settings import colors
 
 
@@ -72,6 +71,7 @@ class MPLCanvas(Canvas):
 
     def multi_plot(self, data):
         self.ax.clear()
+        # todo: plot all data at once. The plot function is very costly
 
         # for custom color cycling
         color_deque = deque(self.color_options)

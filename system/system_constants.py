@@ -1,4 +1,4 @@
-from data_classes import Temperature
+from data_handling.data_classes import Temperature
 
 element_max_temp = Temperature(65.0)
 element_min_temp = Temperature(-20.0)

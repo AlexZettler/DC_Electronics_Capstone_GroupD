@@ -3,7 +3,7 @@
 
 import RPi.GPIO as IO
 
-import custom_logger
+from data_handling import custom_logger
 import time
 
 

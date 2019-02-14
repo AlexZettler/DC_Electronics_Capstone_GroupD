@@ -4,6 +4,8 @@ import os.path as path
 from time import sleep
 import datetime
 import csv
+import data_handling.data_retrieval
+
 
 csv_formatter = logging.Formatter(
     fmt="%(asctime)s, %(levelname)s, %(message)s",
@@ -42,7 +44,6 @@ def create_measurement_logger(device_id):
 
     return logger
 
-
 def create_output_logger(device_id):
     logger = logging.getLogger(f"output-{device_id}")
     logger.setLevel(logging.INFO)
@@ -59,7 +60,6 @@ def create_output_logger(device_id):
     logger.addHandler(s_handler)
 
     return logger
-
 
 def create_system_logger():
     logger = logging.getLogger("system")
@@ -78,62 +78,11 @@ def create_system_logger():
 
     return logger
 
-
 def create_path_for_file(file):
     abs_file_path = os.path.abspath(file)
     dir_path = '\\'.join(abs_file_path.split('\\')[0:-1])
     if not path.exists(dir_path):
         os.makedirs(dir_path)
-
-
-def iget_log_dirs():
-    for item in os.listdir(base_directory):
-        if os.path.isdir(base_directory):
-            yield item
-    raise StopIteration
-
-
-def iget_device_files_from_log_directory(dir):
-    for item in os.listdir(dir):
-        if os.path.isfile(dir) and (item.split(".")[-1] == "csv"):
-            yield item
-    raise StopIteration
-
-
-def get_file_reading(csv_file_path):
-    with open(csv_file_path, mode="r") as f:
-        csvreader = csv.reader(f, quotechar='|')
-        for row in csvreader:
-            #print(row)
-            time, level, reading = row
-            yield (time, level, reading)
-    raise StopIteration
-
-
-def get_time_filtered_readings(csv_file_path, time_range: tuple):
-    start_time, end_time = time_range
-    if end_time < start_time:
-        start_time, end_time = end_time, start_time
-    print(f"{start_time} to {end_time}")
-
-    for row_data in get_file_reading(csv_file_path):
-        #print(row_data)
-        time, level, reading = row_data
-        time = datetime.datetime.strptime(time, csv_formatter.datefmt)
-
-        if end_time > time > start_time:
-            yield (time, reading)
-    raise StopIteration
-
-
-def get_data_from_time_delta(file_name, time_delta):
-    # Test temperature reading
-    current_time = datetime.datetime.now()
-    previous_time = current_time - time_delta
-
-    for time,value in get_time_filtered_readings(file_name,(current_time, previous_time)):
-        yield (time, value)
-    raise StopIteration
 
 
 if __name__ == "__main__":
@@ -149,10 +98,7 @@ if __name__ == "__main__":
     td = datetime.timedelta(minutes=1, seconds=0)
     print(f"Printing data logged in the last {td}:")
 
-    data = get_data_from_time_delta(file_name=file_name, time_delta=td)
+    data = data_handling.data_retrieval.iget_data_from_time_delta(file_name=file_name, time_delta=td)
     f_data = '\n'.join([f"{time}: {value}"for time,value in data])
     print(f"Data is as follows:\n{f_data}")
 
-
-
-#create_path_for_file("./lol/lol.txt")
