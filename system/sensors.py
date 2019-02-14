@@ -6,13 +6,22 @@ system_logger = custom_logger.create_system_logger()
 
 
 class TemperatureSensor(object):
+    """
+    Base class for all temperature sensors
+    """
+
     def __init__(self, _id):
+        # Assign the sensor an ID
         self.id = _id
+
+        # Create a logger for the sensor
         self.logger = custom_logger.create_measurement_logger(_id)
 
     def get_temperature(self)->Temperature:
         # todo: get the temperature reading
         temp_reading = None
+
+        # Log the retrieved temperature
         self.log_temperature(temp_reading)
         return temp_reading
 
@@ -42,4 +51,3 @@ class ElementSensor(TemperatureSensor):
         if current_temp < self.min_temp:
             system_logger.critical(f"Element turning off! {current_temp} is below it's limit of {self.min_temp} ")
             raise UnderTemperature
-

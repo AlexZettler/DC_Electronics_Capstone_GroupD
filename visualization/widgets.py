@@ -205,9 +205,7 @@ class CustomLabel(QLabel):
     def dragEnterEvent(self, e):
         print("drag enter")
         if e.mimeData().hasFormat('text/plain'):
-
             e.accept()
-
         else:
             e.ignore()
 

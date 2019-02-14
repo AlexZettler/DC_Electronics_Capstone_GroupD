@@ -17,13 +17,14 @@ cons_formatter = logging.Formatter(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
-base_directory = f"./log/"
+base_log_directory = f"./log/"
 
 log_directories = {
-    "measurements": f"{base_directory}/measurements/",
-    "outputs": f"{base_directory}/outputs/",
-    "system": f"{base_directory}/"
+    "measurements": f"{base_log_directory}/measurements/",
+    "outputs": f"{base_log_directory}/outputs/",
+    "system": f"{base_log_directory}/"
 }
+
 
 def create_measurement_logger(device_id):
     logger = logging.getLogger(f"measurement-{device_id}")
@@ -44,6 +45,7 @@ def create_measurement_logger(device_id):
 
     return logger
 
+
 def create_output_logger(device_id):
     logger = logging.getLogger(f"output-{device_id}")
     logger.setLevel(logging.INFO)
@@ -61,6 +63,7 @@ def create_output_logger(device_id):
 
     return logger
 
+
 def create_system_logger():
     logger = logging.getLogger("system")
     logger.setLevel(logging.INFO)
@@ -77,6 +80,7 @@ def create_system_logger():
     logger.addHandler(s_handler)
 
     return logger
+
 
 def create_path_for_file(file):
     abs_file_path = os.path.abspath(file)
@@ -98,7 +102,6 @@ if __name__ == "__main__":
     td = datetime.timedelta(minutes=1, seconds=0)
     print(f"Printing data logged in the last {td}:")
 
-    data = data_handling.data_retrieval.iget_data_from_time_delta(file_name=file_name, time_delta=td)
+    data = data_handling.data_retrieval.iget_data_from_time_delta(file_path=file_name, time_delta=td)
     f_data = '\n'.join([f"{time}: {value}"for time,value in data])
     print(f"Data is as follows:\n{f_data}")
-

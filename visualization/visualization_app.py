@@ -17,6 +17,9 @@ class VisApp(QMainWindow):
         self.initUI()
 
     def initUI(self):
+        """
+        Helper method for setting up UI
+        """
         self.setWindowTitle(self.title)
 
         #Setup color
@@ -41,11 +44,17 @@ class VisApp(QMainWindow):
         # Display the app
         self.show()
 
-    def resize_child_tabs(self):
+    def resizeEvent(self, event):
+        """
+        Resize override method
+
+        :param event:
+        :return:
+        """
+        # Call parent resize event
+        super().resizeEvent(event)
+
+        # Define a content rectangle to handle resize events with
         cr = self.contentsRect()
         self.tab_widget.setGeometry(
             QtCore.QRect(cr.left(), cr.top(), cr.width(), cr.height()))
-
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        self.resize_child_tabs()
