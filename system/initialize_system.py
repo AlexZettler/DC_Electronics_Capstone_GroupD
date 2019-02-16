@@ -14,8 +14,10 @@ system_logger = custom_logger.create_system_logger()
 
 def run_system():
 
-    print(f"{'*'*26}\n* System is starting up! *\n{'*'*26}")
+    # Log system startup information
+    system_logger.info("System is starting up!")
 
+    #
     extern_temp_sensor = TemperatureSensor("exter")
 
     # Setup room sensors
@@ -52,7 +54,7 @@ def run_system():
             current_room_temp = ts.get_temperature()
 
             # Calculates the temperature delta for the room
-            room_readings.append(ts.calculate_temperature_delta(current_room_temp))
+            room_readings.append(ts.temperature_error(current_room_temp))
 
         # Calculate the system overall target vector based on a pid controller
         element.generate_new_target_vector(extern_temp_sensor.get_temperature(), room_readings)

@@ -172,7 +172,7 @@ def get_deltatime_filtered_data(csv_file_path, time_delta: datetime.timedelta):
         for data in iget_file_readings(csv_file_path):
             yield data
         raise StopIteration
-    return get_data
+    return get_data()
 
 
 if __name__ == "__main__":

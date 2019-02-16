@@ -2,6 +2,7 @@ from data_handling.data_classes import Temperature
 from data_handling import custom_logger
 from data_handling.custom_errors import OverTemperature, UnderTemperature
 
+# Create a logger to log general system information
 system_logger = custom_logger.create_system_logger()
 
 
