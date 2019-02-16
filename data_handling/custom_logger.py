@@ -4,7 +4,9 @@ import os.path as path
 from time import sleep
 import datetime
 import csv
-import data_handling.data_retrieval
+
+from system.system_constants import base_log_directory
+#from data_handling.data_retrieval import iget_data_from_time_delta
 
 
 csv_formatter = logging.Formatter(
@@ -16,8 +18,6 @@ cons_formatter = logging.Formatter(
     fmt="%(asctime)s:%(levelname)s:%(message)s",
     datefmt='%Y-%m-%d %H:%M:%S'
 )
-
-base_log_directory = f"./log/"
 
 log_directories = {
     "measurements": f"{base_log_directory}/measurements/",
@@ -98,10 +98,3 @@ if __name__ == "__main__":
 
     for i in range(5):
         dummy_sensor_logger.info(i)
-
-    td = datetime.timedelta(minutes=1, seconds=0)
-    print(f"Printing data logged in the last {td}:")
-
-    data = data_handling.data_retrieval.iget_data_from_time_delta(file_path=file_name, time_delta=td)
-    f_data = '\n'.join([f"{time}: {value}"for time,value in data])
-    print(f"Data is as follows:\n{f_data}")

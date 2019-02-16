@@ -129,6 +129,9 @@ class GraphListWidget(QWidget):
         # Retrieves the next graph ID
         self.graphs[current_id] = graph_with_menu
 
+        #Plot some dummy data when graph is added
+        graph_with_menu.graph_widget.multi_plot(get_rand_data())
+
         # Bind the remove button to a function to remove the graph from the managed graphs and erase it from the canvas
         graph_with_menu.btn_remove_plot.clicked.connect(lambda: self.remove_plot(graph_with_menu))
 

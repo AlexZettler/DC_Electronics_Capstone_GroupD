@@ -9,3 +9,4 @@ heating_pin = None
 cooling_pin = None
 
 
+base_log_directory = f"./log/"
