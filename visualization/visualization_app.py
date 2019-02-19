@@ -9,8 +9,12 @@ class VisApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.title = "Visualization!"
+
+        # Define the initial position of the window
         self.left = 100
         self.top = 100
+
+        # Define the windw size
         self.width = 640
         self.height = 480
 

@@ -173,6 +173,10 @@ class GraphListWidget(QWidget):
 
 
 class PlotWithCommands(QWidget):
+    """
+    A widget that contains a graph with controls located on the right hand panel.
+    These options currently only include a remove button
+    """
     def __init__(self, parent, _id):
         super().__init__(parent)
         self._id = _id

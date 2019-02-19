@@ -26,15 +26,16 @@ def iget_log_dirs():
     raise StopIteration
 
 
-def iget_csv_files_in_directory(dir):
+def iget_files_in_directory(dir, ext: str):
     """
-    Generator function to retrieve all csv files in a given folder
+    Generator function to retrieve all files in a given folder
 
     :param dir: The directory to retrieve the files from
-    :yield: File Path
+    :param ext: The File extension to filter out of the directory
+    :yield: File Paths
     """
     for item in os.listdir(dir):
-        if os.path.isfile(dir) and (item.split(".")[-1] == "csv"):
+        if os.path.isfile(dir) and (item.split(".")[-1] == ext):
             yield item
     raise StopIteration
 
@@ -52,24 +53,6 @@ def iget_file_readings(csv_file_path):
             #print(row)
             time, level, reading = row
             yield (time, level, reading)
-    raise StopIteration
-
-
-def iget_time_filtered_readings(csv_file_path, time_range: tuple):
-    # todo: break this down into a time filter function
-    start_time, end_time = time_range
-    if end_time < start_time:
-        start_time, end_time = end_time, start_time
-    print(f"{start_time} to {end_time}")
-
-    for row_data in iget_file_readings(csv_file_path):
-        # print(row_data)
-        time, level, reading = row_data
-        time = datetime.datetime.strptime(time, csv_formatter.datefmt)
-
-        # Filter time reading between two times
-        if end_time > time > start_time:
-            yield (time, reading)
     raise StopIteration
 
 
@@ -92,9 +75,10 @@ def time_filter(start_time: datetime.datetime, end_time: datetime.datetime):
             for data in func(*args, **kwargs):
                 time_valid = True
                 # todo: figure out where the timestamp is located in the data
-                data_timestamp = data[0]
 
-                #Filter out results that are outside of the datetime range
+                data_timestamp = datetime.datetime.strptime(data[0],csv_formatter.datefmt)
+
+                # Filter out results that are outside of the datetime range
                 if start_time > data_timestamp:
                     time_valid = False
                 if data_timestamp < data_timestamp:
@@ -103,7 +87,8 @@ def time_filter(start_time: datetime.datetime, end_time: datetime.datetime):
                 # Only yield results within the range
                 if time_valid:
                     yield data
-            #Stop the yield loop
+
+            # Stop the yield loop
             raise StopIteration
 
         return call
@@ -116,38 +101,14 @@ def priority_filter(funct):
         pass
 
 
-def iget_data_from_time_delta(csv_file_path, time_delta: datetime.timedelta):
-    """
-    Generator function to get a series of measurements
-    to now from a previous time defined by a time delta.
-
-    :param csv_file_path: The location of the csv file
-    :param time_delta: The time in the past to retrieve the time from
-    :return: 
-    """
-    # Test temperature reading
-    current_time = datetime.datetime.now()
-    previous_time = current_time - time_delta
-
-    #
-    for time, value in iget_time_filtered_readings(csv_file_path, (current_time, previous_time)):
-        yield (time, value)
-    raise StopIteration
-
-def get_rand_data():
-    return [[random.random() for i in range(25)]for i in range(5)]
-
-#print(self.get_devices_from_log_directory("../log"))
-
-
 def iget_time_filtered_data(csv_file_path, start_time, end_time):
     """
     A generator function to return data-points within a certain time-range
 
-    :param csv_file_path: The file-path of the csv file to retrieve values from
-    :param start_time: The time to start yielding data
-    :param end_time: The time to stop yielding data
-    :yield: Data within the time-range
+    :param csv_file_path:   The file-path of the csv file to retrieve values from
+    :param start_time:      The time to start yielding data
+    :param end_time:        The time to stop yielding data
+    :yield:             Data within the time-range
     """
     @time_filter(start_time, end_time)
     def get_data():
@@ -157,17 +118,20 @@ def iget_time_filtered_data(csv_file_path, start_time, end_time):
     get_data()
 
 
-def get_deltatime_filtered_data(csv_file_path, time_delta: datetime.timedelta):
+def iget_deltatime_filtered_data(csv_file_path, time_delta: datetime.timedelta):
     """
     A generator function to return data-points that were logged within the last timedelta
 
-    :param csv_file_path: The file-path of the csv file to retrieve values from
-    :param time_delta: The time delta from the current time to start filtering data from
-    :yield: Data within the time-range
+    :param csv_file_path:   The file-path of the csv file to retrieve values from
+    :param time_delta:      The time delta from the current time to start filtering data from
+    :yield:                 Data within the time-range
     """
 
+    # Calculate the start time from the end time and time delta
     end_time = datetime.datetime.now()
-    @time_filter(end_time - time_delta, end_time)
+    start_time = end_time - time_delta
+
+    @time_filter(start_time, end_time)
     def get_data():
         for data in iget_file_readings(csv_file_path):
             yield data
@@ -175,21 +139,18 @@ def get_deltatime_filtered_data(csv_file_path, time_delta: datetime.timedelta):
     return get_data()
 
 
-if __name__ == "__main__":
-    pass
 
+def get_rand_data():
+    return [[random.random() for i in range(25)]for i in range(5)]
+
+if __name__ == "__main__":
+    # print(self.get_devices_from_log_directory("../log"))
+
+    # Create the path to retrieve measurements from
     file_name = os.path.join(log_directories["measurements"], f"dummy.csv")
     td = datetime.timedelta(minutes=1)
 
-    data = get_deltatime_filtered_data(csv_file_path=file_name, time_delta=td)
-    f_data = '\n'.join([f"{time}: {value}" for time,value in data])
+    # Retrieve data from generator wrapper
+    data = iget_deltatime_filtered_data(csv_file_path=file_name, time_delta=td)
+    f_data = '\n'.join([f"{time}: {value}" for time, log_level, value in data])
     print(f"Data is as follows:\n{f_data}")
-
-
-    td = datetime.timedelta(minutes=1, seconds=0)
-    print(f"Printing data logged in the last {td}:")
-
-    data = iget_data_from_time_delta(csv_file_path=file_name, time_delta=td)
-    f_data = '\n'.join([f"{time}: {value}"for time,value in data])
-    print(f"Data is as follows:\n{f_data}")
-

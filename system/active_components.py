@@ -6,7 +6,7 @@ import RPi.GPIO as IO
 from data_handling import custom_logger
 import time
 
-
+# Create a logger for general system information
 system_logger = custom_logger.create_system_logger()
 
 #Set Raspberry Pi pinout mode
@@ -126,6 +126,7 @@ class Element(PID):
 class RegisterFlowController(object):
     freq = 50.0
     # https://circuitdigest.com/microcontroller-projects/raspberry-pi-pwm-tutorial
+
     def __init__(self, id, pin):
         self.id = id
         self._pin = pin

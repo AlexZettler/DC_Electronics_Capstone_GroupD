@@ -8,17 +8,19 @@ import csv
 from system.system_constants import base_log_directory
 #from data_handling.data_retrieval import iget_data_from_time_delta
 
-
+# Define a format to be used with reading and writing data to log files
 csv_formatter = logging.Formatter(
     fmt="%(asctime)s, %(levelname)s, %(message)s",
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
+# Define a format to be used with writing data to the python console
 cons_formatter = logging.Formatter(
     fmt="%(asctime)s:%(levelname)s:%(message)s",
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
+# Define directories to place log files into
 log_directories = {
     "measurements": f"{base_log_directory}/measurements/",
     "outputs": f"{base_log_directory}/outputs/",
@@ -27,6 +29,10 @@ log_directories = {
 
 
 def create_measurement_logger(device_id):
+    """
+    :param device_id: The sensor ID to use
+    :return: A logger configured to write to the correct directory
+    """
     logger = logging.getLogger(f"measurement-{device_id}")
     logger.setLevel(logging.INFO)
 
@@ -47,6 +53,10 @@ def create_measurement_logger(device_id):
 
 
 def create_output_logger(device_id):
+    """
+    :param device_id: The output ID to use
+    :return: A logger configured to write to the correct directory
+    """
     logger = logging.getLogger(f"output-{device_id}")
     logger.setLevel(logging.INFO)
 
@@ -65,6 +75,9 @@ def create_output_logger(device_id):
 
 
 def create_system_logger():
+    """
+    :return: A logger configured to write to the correct directory
+    """
     logger = logging.getLogger("system")
     logger.setLevel(logging.INFO)
 
@@ -83,6 +96,12 @@ def create_system_logger():
 
 
 def create_path_for_file(file):
+    """
+    Creates a directory tree for the file given ensuring that the directory to create the file in exists.
+
+    :param file: The file to create a directory structure for
+    :return: None
+    """
     abs_file_path = os.path.abspath(file)
     dir_path = '\\'.join(abs_file_path.split('\\')[0:-1])
     if not path.exists(dir_path):

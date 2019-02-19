@@ -39,7 +39,8 @@ class TemperatureSensor(object):
         :param temp_reading: The temperature reading to log to the csv file
         :return: None
         """
-        self.logger.info(msg=f"{self.id},{temp_reading}")
+
+        self.logger.info(msg=temp_reading)
 
 class TargetTemperatureSensor(TemperatureSensor):
     """

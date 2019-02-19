@@ -5,8 +5,9 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as Canvas
 from matplotlib.figure import Figure
 
 
-
 import datetime
+import matplotlib.dates as mdates
+
 from collections import deque
 
 from data_handling.data_retrieval import get_rand_data
@@ -50,6 +51,15 @@ class MPLWidget(QFrame):
     def multi_plot(self, data):
         self.canvas.multi_plot(data=data)
 
+    def plot_multi_test(self):
+        self.canvas.multi_plot(get_rand_data())
+
+    def time_format_xaxis(self, data):
+        # todo: write this as a wrapper method
+        my_fmt = mdates.DateFormatter('%H:%M:%S')
+        self.ax.xaxis.set_major_formatter(my_fmt)
+
+
 class MPLCanvas(Canvas):
     """
     A matplotlib canvas to be interfaced with
@@ -80,6 +90,3 @@ class MPLCanvas(Canvas):
         for d in data:
             self.plot(d, color_deque[0])
             color_deque.rotate(1)
-
-    def plot_multi_test(self):
-        self.multi_plot(get_rand_data())
