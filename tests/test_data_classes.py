@@ -2,11 +2,6 @@ from data_handling import data_classes
 import datetime
 
 
-def run_all():
-    test_temperature()
-    test_temperature_reading()
-
-
 def test_temperature():
     def test_units(_temp):
         test_temp = data_classes.Temperature(_temp)
@@ -55,3 +50,8 @@ def test_SystemConfiguration():
 
 def test_RoomConfiguration():
     pass
+
+
+def run_all():
+    test_temperature()
+    test_temperature_reading()

@@ -51,6 +51,7 @@ def iget_file_readings(csv_file_path):
         csv_reader = csv.reader(f, quotechar='|')
         for row in csv_reader:
             # Currently assume all data logs will be only 3 data points per row
+            # Nice to explicitly declare the data size for now.
             time, level, reading = row
             yield (time, level, reading)
     raise StopIteration
@@ -166,13 +167,11 @@ def get_rand_data():
 
 
 if __name__ == "__main__":
-    # print(self.get_devices_from_log_directory("../log"))
-
     # Create the path to retrieve measurements from
     file_name = os.path.join(log_directories["measurements"], f"dummy.csv")
     td = datetime.timedelta(minutes=1)
 
     # Retrieve data from generator wrapper
-    data = iget_deltatime_filtered_data(csv_file_path=file_name, time_delta=td)
-    f_data = '\n'.join([f"{time}: {value}" for time, log_level, value in data])
+    _data = iget_deltatime_filtered_data(csv_file_path=file_name, time_delta=td)
+    f_data = '\n'.join([f"{time}: {value}" for time, log_level, value in _data])
     print(f"Data is as follows:\n{f_data}")

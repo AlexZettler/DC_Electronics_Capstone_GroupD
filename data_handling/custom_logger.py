@@ -23,9 +23,9 @@ cons_formatter = logging.Formatter(
 
 # Define directories to place log files into
 log_directories = {
-    "measurements": f"{base_log_directory}/measurements/",
-    "outputs": f"{base_log_directory}/outputs/",
-    "system": f"{base_log_directory}/"
+    "measurements": os.path.join(base_log_directory, "measurements"),
+    "outputs": os.path.join(base_log_directory, "outputs"),
+    "system": base_log_directory
 }
 
 
@@ -34,10 +34,10 @@ def create_measurement_logger(device_id):
     :param device_id: The sensor ID to use
     :return: A logger configured to write to the correct directory
     """
+
+    # Create a unique logging address for the device
     logger = logging.getLogger(f"measurement-{device_id}")
     logger.setLevel(logging.INFO)
-
-    print(log_directories["measurements"])
 
     file_name = os.path.join(log_directories["measurements"], f"{device_id}.csv")
     create_path_for_file(file_name)
