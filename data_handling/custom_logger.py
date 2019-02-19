@@ -6,7 +6,8 @@ import datetime
 import csv
 
 from system.system_constants import base_log_directory
-#from data_handling.data_retrieval import iget_data_from_time_delta
+
+# from data_handling.data_retrieval import iget_data_from_time_delta
 
 # Define a format to be used with reading and writing data to log files
 csv_formatter = logging.Formatter(
@@ -81,7 +82,7 @@ def create_system_logger():
     logger = logging.getLogger("system")
     logger.setLevel(logging.INFO)
 
-    file_name = os.path.join(log_directories["system"],"system.csv")
+    file_name = os.path.join(log_directories["system"], "system.csv")
     create_path_for_file(file_name)
 
     f_handler = logging.FileHandler(file_name)

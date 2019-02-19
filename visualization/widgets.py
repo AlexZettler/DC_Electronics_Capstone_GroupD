@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QPushButton, QTabWidget, QLineEdit, QLabel, QWidget, QFrame, QScrollArea, QVBoxLayout,QHBoxLayout
+from PyQt5.QtWidgets import QPushButton, QTabWidget, QLineEdit, QLabel, QWidget, QFrame, QScrollArea, QVBoxLayout, \
+    QHBoxLayout
 
 from visualization.MPLWidget import MPLWidget
 from data_handling.data_retrieval import get_rand_data
@@ -9,17 +10,19 @@ class TabDock(QTabWidget):
     """
     The primary widget holding the configure and visualization tabs
     """
+
     def __init__(self, parent):
         super().__init__(parent)
         self.setTabsClosable(False)
         self.setTabShape(QTabWidget.Rounded)
-        #self.setStyleSheet(f"background-color: {colors['light']}")
+        # self.setStyleSheet(f"background-color: {colors['light']}")
 
 
 class ConfigureTab(QWidget):
     """
     The main configuration tab used to configure aspects of the system
     """
+
     def __init__(self, parent):
         super().__init__(parent)
 
@@ -37,6 +40,7 @@ class VisualizeTab(QWidget):
     """
     A tab for visualizing data over a period of time
     """
+
     # https://www.youtube.com/watch?v=ykUhAp8yTFE
     def __init__(self, parent):
         super().__init__(parent)
@@ -58,7 +62,7 @@ class GraphSetupWidget(QFrame):
     """
     A widget for setting up the graphs
     """
-    frame_width=3
+    frame_width = 3
 
     def __init__(self, parent, glw):
         super().__init__(parent)
@@ -79,7 +83,7 @@ class GraphSetupWidget(QFrame):
         self.regather_data.clicked.connect(lambda: self.graph_list_widget.regather_graph_data())
         self.b_layout.addWidget(self.regather_data)
 
-        #Apply layout
+        # Apply layout
         self.setLayout(self.b_layout)
 
 
@@ -87,6 +91,7 @@ class GraphScrollWidget(QScrollArea):
     """
     A widget to enable scroll functionality
     """
+
     def __init__(self, parent):
         super().__init__(parent)
         # DOES NOT WORK WITHOUT THIS LINE OF CODE!
@@ -108,6 +113,7 @@ class GraphListWidget(QWidget):
     """
     A widget for managing many different graphs
     """
+
     def __init__(self, parent):
         super().__init__(parent)
         # An ID to assign to next value given to graph instances
@@ -120,7 +126,7 @@ class GraphListWidget(QWidget):
         self.setLayout(self.box)
 
     def add_graph_plot_instance(self):
-        #Get the next id to be used
+        # Get the next id to be used
         current_id = self.next_id
 
         # Create an instance of the graph
@@ -129,7 +135,7 @@ class GraphListWidget(QWidget):
         # Retrieves the next graph ID
         self.graphs[current_id] = graph_with_menu
 
-        #Plot some dummy data when graph is added
+        # Plot some dummy data when graph is added
         graph_with_menu.graph_widget.multi_plot(get_rand_data())
 
         # Bind the remove button to a function to remove the graph from the managed graphs and erase it from the canvas
@@ -155,7 +161,7 @@ class GraphListWidget(QWidget):
         # Remove the widget from the layout
         self.box.removeWidget(graph_with_menu)
 
-        #PyQt5 delete statement for managing object cleanup
+        # PyQt5 delete statement for managing object cleanup
         sip.delete(graph_with_menu)
 
         # Just to make sure
@@ -164,11 +170,10 @@ class GraphListWidget(QWidget):
     def regather_graph_data(self):
         # Iterate through values in the dictionary
         for graph in self.graphs.values():
-
             # Fill the graphs with dummy data
             data = get_rand_data()
 
-            #Plot all graphs returned in the data variable
+            # Plot all graphs returned in the data variable
             graph.graph_widget.multi_plot(data)
 
 
@@ -177,6 +182,7 @@ class PlotWithCommands(QWidget):
     A widget that contains a graph with controls located on the right hand panel.
     These options currently only include a remove button
     """
+
     def __init__(self, parent, _id):
         super().__init__(parent)
         self._id = _id

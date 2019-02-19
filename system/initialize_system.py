@@ -19,7 +19,6 @@ system_logger = custom_logger.create_system_logger()
 
 
 def run_system():
-
     # Log system startup information
     system_logger.info("System is starting up!")
 
@@ -30,8 +29,10 @@ def run_system():
     room_temperature_sensors = [TargetTemperatureSensor(id, Temperature(20)) for id in range(3)]
 
     # Setup element sensors
-    primary_element_monitor = ElementSensor("prim", system_constants.element_max_temp, system_constants.element_min_temp)
-    secondary_element_monitor = ElementSensor("sec", system_constants.element_max_temp, system_constants.element_min_temp)
+    primary_element_monitor = ElementSensor("prim", system_constants.element_max_temp,
+                                            system_constants.element_min_temp)
+    secondary_element_monitor = ElementSensor("sec", system_constants.element_max_temp,
+                                              system_constants.element_min_temp)
 
     # Set up our active components
     element = Element(peltier_heating=True, enabled=False)
@@ -73,6 +74,7 @@ def run_system():
         # Log a complete system loop and the time it took to complete
         system_logger.debug(f"Main loop completed in {(datetime.datetime.now() - previous_time).total_seconds()}s")
         previous_time = datetime.datetime.now()
+
 
 if __name__ == "__main__":
     run_system()

@@ -1,9 +1,7 @@
 from PyQt5.QtWidgets import QSizePolicy, QFrame, QVBoxLayout
 
-
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as Canvas
 from matplotlib.figure import Figure
-
 
 import datetime
 import matplotlib.dates as mdates
@@ -25,7 +23,7 @@ class MPLWidget(QFrame):
         self.box.addWidget(self.canvas)
         self.setLayout(self.box)
 
-        self.setMinimumSize(400,300)
+        self.setMinimumSize(400, 300)
         self.setFrameStyle(QFrame.Box + QFrame.Raised)
         self.setLineWidth(self.frame_width)
 
@@ -64,14 +62,14 @@ class MPLCanvas(Canvas):
     """
     A matplotlib canvas to be interfaced with
     """
-    color_options = {"C0","C1","C2","C3","C4","C5","C6","C7","C8","C9"}
+    color_options = {"C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"}
 
     def __init__(self):
         self.fig = Figure(facecolor=colors["prim"])
         self.ax = self.fig.add_subplot(111, facecolor=colors["prim"])
         self.ax.set_title("LOL a title")
         super().__init__(self.fig)
-        self.setSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.updateGeometry()
 

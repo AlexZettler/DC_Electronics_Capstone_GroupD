@@ -9,7 +9,7 @@ import time
 # Create a logger for general system information
 system_logger = custom_logger.create_system_logger()
 
-#Set Raspberry Pi pinout mode
+# Set Raspberry Pi pinout mode
 IO.setmode(IO.BCM)
 
 
@@ -28,8 +28,7 @@ class PID(object):
         self.last_meas_time = None
         self.last_meas_error = None
 
-    def get_update_vector(self, current_measurement)->float:
-
+    def get_update_vector(self, current_measurement) -> float:
         current_time = time.time()
         current_error = current_measurement - self.target
 
@@ -44,7 +43,7 @@ class PID(object):
         p_term = current_error
         # todo: Windup guard is a thing to worry about
         self.cumulative_i += delta_error * delta_time
-        d_term = delta_error/delta_time
+        d_term = delta_error / delta_time
 
         # todo: log this to a debug log
 
@@ -61,7 +60,7 @@ class Element(PID):
         self.enabled = enabled
 
     @property
-    def heating(self)->bool:
+    def heating(self) -> bool:
         return self._heating
 
     @heating.setter
@@ -70,7 +69,7 @@ class Element(PID):
         self._cooling = not val
 
     @property
-    def cooling(self)->bool:
+    def cooling(self) -> bool:
         return self._heating
 
     @cooling.setter
@@ -79,7 +78,7 @@ class Element(PID):
         self._heating = not val
 
     @property
-    def enabled(self)->bool:
+    def enabled(self) -> bool:
         return self._enabled
 
     @enabled.setter
@@ -105,8 +104,7 @@ class Element(PID):
             # todo: Set heating pin low
             # todo: Set cooling pin low
 
-
-    def generate_new_target_vector(self, main_temp, sensor_deltas: list)->None:
+    def generate_new_target_vector(self, main_temp, sensor_deltas: list) -> None:
         # Generate a new target vector based on a pid controller
 
         # out_vector = self.update_with_values()
@@ -123,8 +121,10 @@ class Element(PID):
         if out_vector == 0.0:
             pass
 
+
 class RegisterFlowController(object):
     freq = 50.0
+
     # https://circuitdigest.com/microcontroller-projects/raspberry-pi-pwm-tutorial
 
     def __init__(self, id, pin):
@@ -133,8 +133,8 @@ class RegisterFlowController(object):
 
         self.logger = custom_logger.create_output_logger(id)
 
-        #todo: set channel up
-        ch=None
+        # todo: set channel up
+        ch = None
         self.last_pos = 0.0
 
         IO.setup(self._pin, IO.OUT)
@@ -145,15 +145,17 @@ class RegisterFlowController(object):
         self.set_to_pos(90.0)
 
     def set_to_pos(self, angle: float):
-        #angle should be 0-180
+        # angle should be 0-180 degrees
+        # Angle will only ever be set between 0 and 90 degrees in our case
         # 1/20 -> 1/10
 
-        if (angle >=0.0) and (angle <=180.0):
+        if (angle >= 0.0) and (angle <= 180.0):
 
+            # Calculate angle delta
             angle_delta = self.last_pos - angle
 
+            # Verify that we are actually moving the servo motor
             if angle_delta != 0.0:
-
                 # Generate a signal between (1 and 2) of it's duty cycle
                 duty_cycle = (1 + (angle / 180)) / 20
 
@@ -161,9 +163,6 @@ class RegisterFlowController(object):
                 self.logger.info(f"{angle}, {angle_delta}")
                 self.last_pos = angle
 
-            else:
-                pass
-            # No change in position
-
         else:
-            system_logger.warning(f"Device with id {id} tried to set it's position to '{angle}' which is outside of it's operating range")
+            system_logger.warning(
+                f"Device with id {id} tried to set it's position to '{angle}' which is outside of it's operating range")

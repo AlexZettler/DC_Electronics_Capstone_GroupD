@@ -50,7 +50,7 @@ def iget_file_readings(csv_file_path):
     with open(csv_file_path, mode="r") as f:
         csv_reader = csv.reader(f, quotechar='|')
         for row in csv_reader:
-            #print(row)
+            # Currently assume all data logs will be only 3 data points per row
             time, level, reading = row
             yield (time, level, reading)
     raise StopIteration
@@ -74,9 +74,7 @@ def time_filter(start_time: datetime.datetime, end_time: datetime.datetime):
         def call(*args, **kwargs):
             for data in func(*args, **kwargs):
                 time_valid = True
-                # todo: figure out where the timestamp is located in the data
-
-                data_timestamp = datetime.datetime.strptime(data[0],csv_formatter.datefmt)
+                data_timestamp = datetime.datetime.strptime(data[0], csv_formatter.datefmt)
 
                 # Filter out results that are outside of the datetime range
                 if start_time > data_timestamp:
@@ -92,29 +90,52 @@ def time_filter(start_time: datetime.datetime, end_time: datetime.datetime):
             raise StopIteration
 
         return call
+
     return decorate
 
 
-def priority_filter(funct):
+def priority_filter(level_wanted):
     # todo: implement this as a generator function wrapper function
-    def wrapper():
-        pass
+    """
+    Generator function to iterate through a Generator statement
+    and return measurements that fall within the specified time range
+    """
+
+    # todo: write this as a wrapper function
+    def decorate(func):
+        def call(*args, **kwargs):
+            for data in func(*args, **kwargs):
+                # Retrieve the level that the data was logged at
+                level = data[1]
+
+                # Filter out results that are outside of the datetime range
+                if level == level_wanted:
+                    yield data
+
+            # Stop the yield loop
+            raise StopIteration
+
+        return call
+
+    return decorate
 
 
 def iget_time_filtered_data(csv_file_path, start_time, end_time):
     """
-    A generator function to return data-points within a certain time-range
+    A generator function to filter out data-points that within a certain time-range
 
     :param csv_file_path:   The file-path of the csv file to retrieve values from
     :param start_time:      The time to start yielding data
     :param end_time:        The time to stop yielding data
     :yield:             Data within the time-range
     """
+
     @time_filter(start_time, end_time)
     def get_data():
         for data in iget_file_readings(csv_file_path):
             yield data
         raise StopIteration
+
     get_data()
 
 
@@ -136,12 +157,13 @@ def iget_deltatime_filtered_data(csv_file_path, time_delta: datetime.timedelta):
         for data in iget_file_readings(csv_file_path):
             yield data
         raise StopIteration
+
     return get_data()
 
 
-
 def get_rand_data():
-    return [[random.random() for i in range(25)]for i in range(5)]
+    return [[random.random() for i in range(25)] for i in range(5)]
+
 
 if __name__ == "__main__":
     # print(self.get_devices_from_log_directory("../log"))
