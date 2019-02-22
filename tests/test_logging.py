@@ -2,7 +2,6 @@ import data_handling.custom_logger as dl
 import data_handling.data_retrieval as dr
 import system.system_constants as sc
 
-
 from types import GeneratorType as Generator
 import logging
 import os.path
@@ -30,27 +29,38 @@ def test_retrieval():
     dummy_log_path = os.path.join(sc.base_log_directory, "measurements", "dummy_id.csv")
 
     def get_all_dummy_data():
-        rf = dr.iget_file_readings(dummy_log_path)
-        assert isinstance(rf, Generator)
-        data = [i for i in rf]
+        data_iterable = dr.iget_file_readings(dummy_log_path)
+
+        # Confirm that the data retriever is a generator
+        assert isinstance(data_iterable, Generator)
+        data = [i for i in data_iterable]
 
         # Confirm that a list was created
+        assert data is not None
         assert data
 
     def get_recent_dummy_data():
-        print('hi')
         data_iterable = dr.iget_deltatime_filtered_data(
             csv_file_path=dummy_log_path,
             time_delta=datetime.timedelta(seconds=2))
 
+        # Confirm that the data retriever is a generator
+        assert isinstance(data_iterable, Generator)
+
         # Confirm that data was gathered
         data = [i for i in data_iterable]
+
+        # Confirm that a list was created
         assert data is not None
+        assert data
 
         # Verify 4 data points were gathered
         assert len(data) == 4
 
+    # Get all data from the log file
     get_all_dummy_data()
+
+    # Get all recent data from the log file
     get_recent_dummy_data()
 
 

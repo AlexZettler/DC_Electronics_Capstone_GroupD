@@ -21,8 +21,9 @@ def iget_log_dirs():
     :yield: Directory
     """
     for item in os.listdir(base_log_directory):
-        if os.path.isdir(base_log_directory):
-            yield item
+        item_path = os.path.join(base_log_directory, item)
+        if os.path.isdir(item_path):
+            yield item_path
     raise StopIteration
 
 
@@ -35,8 +36,9 @@ def iget_files_in_directory(dir, ext: str):
     :yield: File Paths
     """
     for item in os.listdir(dir):
-        if os.path.isfile(dir) and (item.split(".")[-1] == ext):
-            yield item
+        item_path = os.path.join(dir, item)
+        if os.path.isfile(item_path) and (item_path.split(".")[-1] == ext):
+            yield item_path
     raise StopIteration
 
 
@@ -63,14 +65,6 @@ def time_filter(start_time: datetime.datetime, end_time: datetime.datetime):
     and return measurements that fall within the specified time range
     """
 
-    # Undefined start
-    if start_time is None:
-        pass
-
-    if end_time is None:
-        end_time = datetime.datetime.now()
-
-    # todo: write this as a wrapper function
     def decorate(func):
         def call(*args, **kwargs):
             for data in func(*args, **kwargs):
@@ -87,7 +81,7 @@ def time_filter(start_time: datetime.datetime, end_time: datetime.datetime):
                 if time_valid:
                     yield data
 
-            # Stop the yield loop
+            # Stop the Iterator
             raise StopIteration
 
         return call
@@ -96,13 +90,11 @@ def time_filter(start_time: datetime.datetime, end_time: datetime.datetime):
 
 
 def priority_filter(level_wanted):
-    # todo: implement this as a generator function wrapper function
     """
     Generator function to iterate through a Generator statement
     and return measurements that fall within the specified time range
     """
 
-    # todo: write this as a wrapper function
     def decorate(func):
         def call(*args, **kwargs):
             for data in func(*args, **kwargs):
@@ -163,12 +155,13 @@ def iget_deltatime_filtered_data(csv_file_path, time_delta: datetime.timedelta):
 
 
 def get_rand_data():
+    # Generate some dummy data for graphs
     return [[random.random() for i in range(25)] for i in range(5)]
 
 
 if __name__ == "__main__":
     # Create the path to retrieve measurements from
-    file_name = os.path.join(log_directories["measurements"], f"dummy.csv")
+    file_name = os.path.join(log_directories["measurements"], f"dummy_id.csv")
     td = datetime.timedelta(minutes=1)
 
     # Retrieve data from generator wrapper
