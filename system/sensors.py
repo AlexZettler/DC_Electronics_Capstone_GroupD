@@ -46,7 +46,7 @@ class TargetTemperatureSensor(TemperatureSensor):
     """
     A temperature sensor with a target temperature.
     This is used to model the rooms in the system.
-    It is useful for calculating temperature target vectors
+    It is useful for calculating temperature target vectors6-
     """
 
     def __init__(self, _id, target_temperature: Temperature):

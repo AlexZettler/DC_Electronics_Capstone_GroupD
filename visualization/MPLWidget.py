@@ -58,21 +58,34 @@ class MPLWidget(QFrame):
         self.ax.xaxis.set_major_formatter(my_fmt)
 
 
+    def create_time_axis(self, start_time:datetime.datetime, end_time: datetime.datetime):
+        """
+
+        :param start_time: The time to create the starting time on the axis
+        :param end_time: The time to create the ending time on the axis
+        :return: None
+        """
+        # Todo: Implement MPL widgt time axis
+
 class MPLCanvas(Canvas):
     """
     A matplotlib canvas to be interfaced with
     """
+
+    #Define colors to cycle through
     color_options = {"C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"}
 
     def __init__(self):
         self.fig = Figure(facecolor=colors["prim"])
         self.ax = self.fig.add_subplot(111, facecolor=colors["prim"])
-        self.ax.set_title("LOL a title")
+
+        self.ax.set_title("Initial title")
         super().__init__(self.fig)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.updateGeometry()
 
+    # Todo: Reimplement the functions below in the MPL widget so that functionality isn't split between two classes
     def plot(self, data, color):
         self.ax.plot(data, color=color)
         self.draw()

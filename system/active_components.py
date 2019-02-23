@@ -15,41 +15,84 @@ IO.setmode(IO.BCM)
 
 class PID(object):
     # Based loosely on: https://github.com/ivmech/ivPID/blob/master/PID.py
+    """
+    A class representing a PID interface for a device
+    """
 
     def __init__(self, target, p, i, d, b):
+        # Set a target to compare error against
         self.target = target
 
+        # Define P,I,D, and b parameters
         self._p = p
         self._i = i
         self._d = d
         self._b = b
 
-        self.cumulative_i = 0.0
+        self.cumulative_i = None
+        self.reset_integral()
+
+        # Define attributes of the last value read
         self.last_meas_time = None
         self.last_meas_error = None
 
+    def reset_integral(self):
+        self.cumulative_i = 0.0
+
     def get_update_vector(self, current_measurement) -> float:
+        # Get the current time
         current_time = time.time()
+
+        # Calculate current error
         current_error = current_measurement - self.target
 
+        # Handle start condition where the last measurement was not gathered
         if (self.last_meas_time is None) or (self.last_meas_error is None):
-            self.last_meas_time = current_time
-            self.last_meas_error = current_error
-            return 0.0
+            self.last_meas_time, self.last_meas_error = current_time, current_error
 
+            # Without a delta time the P portion is the only portion of term that can be returned
+            return self.get_p_term(current_error)
+
+        # Calculate the time and error deltas since last reading
         delta_time = current_time - self.last_meas_time
         delta_error = current_error - self.last_meas_error
 
-        p_term = current_error
         # todo: Windup guard is a thing to worry about
+
+        # Add the current error to the running integral rerm
         self.cumulative_i += delta_error * delta_time
         d_term = delta_error / delta_time
 
         # todo: log this to a debug log
 
+        # Store the current time for next reading
         self.last_meas_time = current_time
 
-        return self._p * p_term + self._i * self.cumulative_i + d_term + self._b
+        # Define the terms to take into consideration
+        terms = (
+            self.get_p_term(current_error),
+            self.get_i_term(),
+            self.get_d_term(current_error),
+            self._b
+        )
+
+        # Return the sum of terms
+        return sum(terms)
+
+    def get_p_term(self, error: float):
+        """
+        Pure funciton for calculating the p term
+
+        :param error:
+        :return:
+        """
+        return self._p * error
+
+    def get_i_term(self):
+        return self._i * self.cumulative_i
+
+    def get_d_term(self, error: float):
+        pass
 
 
 class Element(PID):
@@ -123,6 +166,7 @@ class Element(PID):
 
 
 class RegisterFlowController(object):
+    # Constant PWM signal frequency
     freq = 50.0
 
     # https://circuitdigest.com/microcontroller-projects/raspberry-pi-pwm-tutorial
@@ -133,7 +177,7 @@ class RegisterFlowController(object):
 
         self.logger = custom_logger.create_output_logger(id)
 
-        # todo: set channel up
+        # todo: set channel up as an output
         ch = None
         self.last_pos = 0.0
 
@@ -149,6 +193,7 @@ class RegisterFlowController(object):
         # Angle will only ever be set between 0 and 90 degrees in our case
         # 1/20 -> 1/10
 
+        # Ensure that the angle is within the device limits
         if (angle >= 0.0) and (angle <= 180.0):
 
             # Calculate angle delta
@@ -156,13 +201,18 @@ class RegisterFlowController(object):
 
             # Verify that we are actually moving the servo motor
             if angle_delta != 0.0:
-                # Generate a signal between (1 and 2) of it's duty cycle
+                # Generate a signal between (1 and 2)/20 of it's duty cycle
                 duty_cycle = (1 + (angle / 180)) / 20
 
+                # Change the PWM output to the calculated value
                 self.pwm_cont.ChangeDutyCycle(duty_cycle)
+
+                # Log the output
                 self.logger.info(f"{angle}, {angle_delta}")
+
+                # Store last position set so that the device doesn't need to rewrite an unchanged position
                 self.last_pos = angle
 
         else:
-            system_logger.warning(
+            system_logger.debug(
                 f"Device with id {id} tried to set it's position to '{angle}' which is outside of it's operating range")
