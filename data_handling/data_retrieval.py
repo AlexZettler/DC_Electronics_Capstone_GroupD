@@ -1,12 +1,10 @@
-from system.system_constants import base_log_directory
+import csv
+import datetime
+import os
+import random
 
 from data_handling.custom_logger import csv_formatter, log_directories
-
-from typing import Generator
-import random
-import os
-import datetime
-import csv
+from system.system_constants import base_log_directory
 
 
 def get_device_types():

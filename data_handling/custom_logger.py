@@ -1,32 +1,8 @@
 import logging
 import os
 import os.path as path
-from time import sleep
-import datetime
-import csv
 
-from system.system_constants import base_log_directory
-
-# from data_handling.data_retrieval import iget_data_from_time_delta
-
-# Define a format to be used with reading and writing data to log files
-csv_formatter = logging.Formatter(
-    fmt="%(asctime)s, %(levelname)s, %(message)s",
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
-
-# Define a format to be used with writing data to the python console
-cons_formatter = logging.Formatter(
-    fmt="%(asctime)s:%(levelname)s:%(message)s",
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
-
-# Define directories to place log files into
-log_directories = {
-    "measurements": os.path.join(base_log_directory, "measurements"),
-    "outputs": os.path.join(base_log_directory, "outputs"),
-    "system": base_log_directory
-}
+from system.system_constants import csv_formatter, cons_formatter, log_directories
 
 
 def create_measurement_logger(device_id):
