@@ -8,7 +8,10 @@ from data_handling import custom_logger
 # Data types
 from data_handling.data_classes import Temperature
 from time import sleep
+
+
 import datetime
+import time
 
 # System components
 from system.sensors import TargetTemperatureSensor, ElementSensor, TemperatureSensor
@@ -16,6 +19,59 @@ from system.active_components import Element, RegisterFlowController
 
 # Setup system logger
 system_logger = custom_logger.create_system_logger()
+
+
+class System(object):
+    """
+    This is the class for the main system
+
+    """
+    def __init__(self):
+        self.element = Element("elem", peltier_heating=True, enabled=False)
+        self.room_sensors = dict()
+        self.room_dampers = dict()
+
+        # define ids for rooms
+        room_ids = range(1, 3)
+
+        # Setup dampers and sensors for each room
+        for _id in room_ids:
+            self.room_sensors[_id] = TemperatureSensor(_id=_id)
+            self.room_dampers[_id] = RegisterFlowController(id=_id, pin=None)
+
+
+    def handle_cycle(self):
+        pass
+
+    def enter_main_loop(self)->None:
+        """
+        Method fo entering the main system control loop
+        :return:
+        """
+        # Log system startup information
+        system_logger.info("System is starting up!")
+
+        while True:
+
+            cycle_start_time = time.time()
+            self.handle_cycle()
+            cycle_end_time = time.time()
+
+            delta_time = cycle_end_time - cycle_start_time
+
+            # Todo: format time to be more readable
+            system_logger.debug(f"Main loop completed in{delta_time}")
+
+            sleep_time = system_constants.system_update_interval - delta_time
+
+            if sleep_time>=0:
+                time.sleep(sleep_time)
+            else:
+                system_logger.warning(
+                    f"Main loop took longer than {system_constants.system_update_interval} to complete."
+                    f"Consider changing the cycle time to a value greater than {delta_time}"
+                    f"to ensure cycle time is consistent!"
+                )
 
 
 def run_system():
@@ -35,7 +91,9 @@ def run_system():
                                               system_constants.element_min_temp)
 
     # Set up our active components
-    element = Element(peltier_heating=True, enabled=False)
+    element = Element("elem", peltier_heating=True, enabled=False)
+
+    # Define room valves
     register_valves = [RegisterFlowController(id, "Dummy pin") for id in range(3)]
 
     # Enable the main temperature control loop of the element

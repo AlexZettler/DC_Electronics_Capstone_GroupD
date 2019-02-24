@@ -60,5 +60,7 @@ class VisApp(QMainWindow):
 
         # Define a content rectangle to handle resize events with
         cr = self.contentsRect()
+
+        # Set the widget to fill the entire window
         self.tab_widget.setGeometry(
             QtCore.QRect(cr.left(), cr.top(), cr.width(), cr.height()))

@@ -15,17 +15,22 @@ def create_measurement_logger(device_id):
     logger = logging.getLogger(f"measurement-{device_id}")
     logger.setLevel(logging.INFO)
 
+
+    # Define a fielpath for the measuremet logger
     file_name = os.path.join(log_directories["measurements"], f"{device_id}.csv")
     create_path_for_file(file_name)
 
+    # Create a file formatter for the logger
     f_handler = logging.FileHandler(file_name)
     f_handler.setFormatter(csv_formatter)
     logger.addHandler(f_handler)
 
+    # Create a stream formatter for the logger
     s_handler = logging.StreamHandler()
     s_handler.setFormatter(cons_formatter)
     logger.addHandler(s_handler)
 
+    # Return the logger object
     return logger
 
 

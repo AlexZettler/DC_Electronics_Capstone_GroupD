@@ -5,6 +5,7 @@ from visualization.MPLWidget import MPLWidget
 from data_handling.data_retrieval import get_rand_data
 import PyQt5.sip as sip
 
+import datetime
 
 class TabDock(QTabWidget):
     """
@@ -217,7 +218,25 @@ class PlotWithCommands(QWidget):
         self.setLayout(h_layout)
 
     def graph_log_files(self):
-        pass
+        """
+        This method plots a list of log files and data points logged within the last minute
+
+        :return: None
+        """
+
+        # Get the start and end times
+        time_delta = datetime.timedelta(minutes=1)
+        end_time = datetime.datetime.now()
+        start_time = end_time - time_delta
+
+        # Plot the time plotted graph
+        self.graph_widget.create_time_axis(start_time, end_time)
+
+        # Gather dummy data for now
+        data = (range(20))
+
+        #Plot all graphs
+        self.graph_widget.multi_plot(data )
 
     def add_linked_log_files(self):
         pass

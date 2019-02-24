@@ -13,6 +13,10 @@ from visualization.settings import colors
 
 
 class MPLWidget(QFrame):
+    """
+    A widget containing a matplotlib canvas with methods for plotting ad formatting
+
+    """
     frame_width = 3
     data_list_box_size = (100, 20)
 
@@ -57,8 +61,7 @@ class MPLWidget(QFrame):
         my_fmt = mdates.DateFormatter('%H:%M:%S')
         self.ax.xaxis.set_major_formatter(my_fmt)
 
-
-    def create_time_axis(self, start_time:datetime.datetime, end_time: datetime.datetime):
+    def create_time_axis(self, start_time: datetime.datetime, end_time: datetime.datetime):
         """
 
         :param start_time: The time to create the starting time on the axis
@@ -67,12 +70,13 @@ class MPLWidget(QFrame):
         """
         # Todo: Implement MPL widgt time axis
 
+
 class MPLCanvas(Canvas):
     """
     A matplotlib canvas to be interfaced with
     """
 
-    #Define colors to cycle through
+    # Define colors to cycle through
     color_options = {"C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"}
 
     def __init__(self):
@@ -91,13 +95,20 @@ class MPLCanvas(Canvas):
         self.draw()
 
     def multi_plot(self, data):
+        # Clear previously plotted data
         self.ax.clear()
-        # todo: plot all data at once. The plot function is very costly
+
+        # todo: plot all data at once! The plot function is very costly
 
         # for custom color cycling
         color_deque = deque(self.color_options)
 
+        # Set the axis title to the current time
         self.ax.set_title(f"Data({datetime.datetime.now().strftime('%H:%M:%S')})")
+
+        # Iterate through all data and plot each individually
         for d in data:
+            # Plot the current data in the next color
             self.plot(d, color_deque[0])
+            # Select next color
             color_deque.rotate(1)

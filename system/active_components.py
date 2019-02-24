@@ -13,13 +13,21 @@ system_logger = custom_logger.create_system_logger()
 IO.setmode(IO.BCM)
 
 
-class PID(object):
+class OutputController(object):
+    def __init__(self, _id):
+        self._id = _id
+
+
+class PID(OutputController):
     # Based loosely on: https://github.com/ivmech/ivPID/blob/master/PID.py
     """
     A class representing a PID interface for a device
     """
 
-    def __init__(self, target, p, i, d, b):
+    def __init__(self, _id, target, p, i, d, b):
+        # Sets output id
+        super().__init__(_id)
+
         # Set a target to compare error against
         self.target = target
 
@@ -29,15 +37,13 @@ class PID(object):
         self._d = d
         self._b = b
 
+        # Set cumulative i to non to verify that reset works properly
         self.cumulative_i = None
         self.reset_integral()
 
         # Define attributes of the last value read
         self.last_meas_time = None
         self.last_meas_error = None
-
-    def reset_integral(self):
-        self.cumulative_i = 0.0
 
     def get_update_vector(self, current_measurement) -> float:
         # Get the current time
@@ -59,9 +65,8 @@ class PID(object):
 
         # todo: Windup guard is a thing to worry about
 
-        # Add the current error to the running integral rerm
-        self.cumulative_i += delta_error * delta_time
-        d_term = delta_error / delta_time
+        # Add the current error to the running integral term
+        self.update_cumulative_i_term(delta_error, delta_time)
 
         # todo: log this to a debug log
 
@@ -72,33 +77,48 @@ class PID(object):
         terms = (
             self.get_p_term(current_error),
             self.get_i_term(),
-            self.get_d_term(current_error),
+            self.get_d_term(delta_error, delta_time),
             self._b
         )
 
         # Return the sum of terms
         return sum(terms)
 
+    ########################
+    # Proportional methods #
+    ########################
     def get_p_term(self, error: float):
         """
-        Pure funciton for calculating the p term
+        Pure function for calculating the p term
 
         :param error:
         :return:
         """
         return self._p * error
 
+    ####################
+    # Integral methods #
+    ####################
+    def reset_integral(self):
+        self.cumulative_i = 0.0
+
+    def update_cumulative_i_term(self, delta_error, delta_time):
+        self.cumulative_i += delta_error * delta_time
+
     def get_i_term(self):
         return self._i * self.cumulative_i
 
-    def get_d_term(self, error: float):
-        pass
+    ######################
+    # Derivative methods #
+    ######################
+    def get_d_term(self, delta_error, delta_time):
+        return delta_error / delta_time
 
 
 class Element(PID):
 
-    def __init__(self, peltier_heating, enabled: bool):
-        super().__init__(target=0.0, p=0.0, i=0.0, d=0.0, b=0.0)
+    def __init__(self, _id, peltier_heating, enabled: bool):
+        super().__init__(_id=_id, target=0.0, p=0.0, i=0.0, d=0.0, b=0.0)
         self.heating = peltier_heating
         self.enabled = enabled
 
@@ -131,7 +151,13 @@ class Element(PID):
         if val is False:
             self.apply_state()
 
-    def apply_state(self):
+    def apply_state(self) -> None:
+        """
+        Sets the pins of the Raspberry PI to apply the current heat/cool and enabled state.
+        This is a software safety method and verifies that pins are enabled and disabled in the correct order.
+
+        :return: None
+        """
         if self.enabled:
             if self.heating:
                 system_logger.info("Is now heating")
@@ -172,6 +198,7 @@ class RegisterFlowController(object):
     # https://circuitdigest.com/microcontroller-projects/raspberry-pi-pwm-tutorial
 
     def __init__(self, id, pin):
+        # Sets the
         self.id = id
         self._pin = pin
 
