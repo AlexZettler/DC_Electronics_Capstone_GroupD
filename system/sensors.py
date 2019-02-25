@@ -64,8 +64,8 @@ class ElementSensor(TemperatureSensor):
     exceed specified temperature limits set in the constructor.
     """
 
-    def __init__(self, id, max_temp: Temperature, min_temp: Temperature):
-        super().__init__(id)
+    def __init__(self, _id, max_temp: Temperature, min_temp: Temperature):
+        super().__init__(_id)
         self.max_temp = max_temp
         self.min_temp = min_temp
 

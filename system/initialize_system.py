@@ -9,7 +9,6 @@ from data_handling import custom_logger
 from data_handling.data_classes import Temperature
 from time import sleep
 
-
 import datetime
 import time
 
@@ -23,11 +22,16 @@ system_logger = custom_logger.create_system_logger()
 
 class System(object):
     """
-    This is the class for the main system
-
+    This class represents the main system.
+    It is used for setting up the system, running cycles, and monitoring performance.
     """
+
     def __init__(self):
-        self.element = Element("elem", peltier_heating=True, enabled=False)
+        self.update_interval = system_constants.system_update_interval
+
+        self.element = Element("element", peltier_heating=True, enabled=False)
+
+        # Define sensor and damper management hash tables
         self.room_sensors = dict()
         self.room_dampers = dict()
 
@@ -39,42 +43,75 @@ class System(object):
             self.room_sensors[_id] = TemperatureSensor(_id=_id)
             self.room_dampers[_id] = RegisterFlowController(id=_id, pin=None)
 
+        # Setup element sensors
+        self.element_sensors = {
+            name: ElementSensor(
+                _id=name,
+                max_temp=system_constants.element_max_temp,
+                min_temp=system_constants.element_min_temp
+            )
+            for name in ("prim", "sec")
+        }
 
-    def handle_cycle(self):
+    def handle_cycle(self) -> None:
+        """
+        Method for running a system cycle
+
+        :return:
+        """
+
         pass
 
-    def enter_main_loop(self)->None:
+    def enter_main_loop(self) -> None:
         """
-        Method fo entering the main system control loop
+        Method for entering the main system control loop
         :return:
         """
         # Log system startup information
         system_logger.info("System is starting up!")
 
         while True:
-
+            # Get the cycle start time
             cycle_start_time = time.time()
+
+            # Run the cycle
             self.handle_cycle()
+
+            # Get the cycle end time
             cycle_end_time = time.time()
 
+            # Calculate the cycle run time
             delta_time = cycle_end_time - cycle_start_time
 
-            # Todo: format time to be more readable
-            system_logger.debug(f"Main loop completed in{delta_time}")
+            # Todo: format seconds decimal places
+            system_logger.debug(f"Main loop completed in {delta_time}")
 
-            sleep_time = system_constants.system_update_interval - delta_time
+            # Get desired sleep time
+            desired_delay_time = self.get_delay_time(delta_time)
+            time.sleep(desired_delay_time)
 
-            if sleep_time>=0:
-                time.sleep(sleep_time)
-            else:
-                system_logger.warning(
-                    f"Main loop took longer than {system_constants.system_update_interval} to complete."
-                    f"Consider changing the cycle time to a value greater than {delta_time}"
-                    f"to ensure cycle time is consistent!"
-                )
+    def get_delay_time(self, cycle_time):
+        sleep_time = self.update_interval - cycle_time
+
+        # Handle case where sleep time is less than 0.
+        # This is the case when the cycle time is greater than the update interval
+        if sleep_time < 0:
+            # Log a warning with time information about the cycle
+            system_logger.warning(
+                f"Main loop took longer than {system_constants.system_update_interval} to complete."
+                f"Consider changing the cycle time to a value greater than {cycle_time}"
+                f"to ensure cycle time is consistent!"
+            )
+            sleep_time = 0.0
+
+        return sleep_time
 
 
 def run_system():
+    """
+    This function is being replaced by the System class
+    """
+
     # Log system startup information
     system_logger.info("System is starting up!")
 
