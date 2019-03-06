@@ -7,6 +7,7 @@ import PyQt5.sip as sip
 
 import datetime
 
+
 class TabDock(QTabWidget):
     """
     The primary widget holding the configure and visualization tabs
@@ -17,7 +18,7 @@ class TabDock(QTabWidget):
         self.setTabsClosable(False)
         self.setTabShape(QTabWidget.Rounded)
 
-        # Todo: Add tab redraw event to achieve a consistant style
+        # Todo: Add tab redraw event to achieve a consistent style
 
         # self.setStyleSheet(f"background-color: {colors['light']}")
 
@@ -206,7 +207,7 @@ class PlotWithCommands(QWidget):
         button_menu_layout = QVBoxLayout()
 
         # Add a remove plot button. Functionality is not created here.
-        # This is becausethe function would remove this entire widget and the key in the graph manager would lose the relation
+        # This is because the function would remove this widget and the key in the graph manager would lose the relation
         self.btn_remove_plot = QPushButton("Remove")
         button_menu_layout.addWidget(self.btn_remove_plot)
 
@@ -217,11 +218,9 @@ class PlotWithCommands(QWidget):
         # Apply layout
         self.setLayout(h_layout)
 
-    def graph_log_files(self):
+    def graph_log_files(self)->None:
         """
         This method plots a list of log files and data points logged within the last minute
-
-        :return: None
         """
 
         # Get the start and end times
@@ -235,8 +234,8 @@ class PlotWithCommands(QWidget):
         # Gather dummy data for now
         data = (range(20))
 
-        #Plot all graphs
-        self.graph_widget.multi_plot(data )
+        # Plot all graphs
+        self.graph_widget.multi_plot(data)
 
     def add_linked_log_files(self):
         pass

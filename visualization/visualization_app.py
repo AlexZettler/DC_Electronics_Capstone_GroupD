@@ -6,6 +6,9 @@ from visualization.widgets import *
 
 
 class VisApp(QMainWindow):
+    """
+    Main QT application window
+    """
     def __init__(self):
         super().__init__()
         self.title = "Visualization!"
@@ -18,24 +21,24 @@ class VisApp(QMainWindow):
         self.width = 640
         self.height = 480
 
-        self.initUI()
+        # Setup tabs
+        self.tab_widget = TabDock(self)
 
-    def initUI(self):
+        self.init_ui()
+
+    def init_ui(self):
         """
         Helper method for setting up UI
         """
         self.setWindowTitle(self.title)
 
-        #Setup color
+        # Setup color
         self.setStyleSheet(f"background-color: {colors['prim']}")
 
         # Set positions
         self.setGeometry(self.left, self.top, self.width, self.height)
 
-        self.statusBar().showMessage("statusbar thing")
-
-        # Setup tabs
-        self.tab_widget = TabDock(self)
+        self.statusBar().showMessage("status bar thing")
 
         # Setup configure widget
         configure = ConfigureTab(self)

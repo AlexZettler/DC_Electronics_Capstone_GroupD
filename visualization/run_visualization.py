@@ -4,7 +4,7 @@ from visualization.visualization_app import VisApp
 import sys
 
 app = QtWidgets.QApplication(sys.argv)
-#settings = QtCore.QSettings('Alex Zettler', 'Data visualization')
+# settings = QtCore.QSettings('Alex Zettler', 'Data visualization')
 
 
 visualization = VisApp()
