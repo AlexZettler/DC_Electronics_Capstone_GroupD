@@ -173,13 +173,13 @@ class Element(PID):
             # todo: Set heating pin low
             # todo: Set cooling pin low
 
-    def generate_new_target_vector(self, main_temp, sensor_deltas: list) -> None:
+    def generate_new_target_vector(self, main_temp, sensor_deltas: dict) -> None:
         # Generate a new target vector based on a pid controller
 
         # out_vector = self.update_with_values()
 
         # todo: implement PID controller
-        out_vector = sum(sensor_deltas)
+        out_vector = sum(sensor_deltas.values())
 
         if out_vector > 0.0:
             self.heating = True

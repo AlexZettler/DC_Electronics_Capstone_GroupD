@@ -1,20 +1,21 @@
+"""
+The main system
+"""
+
 # Generalized system configuration data
-from system import system_constants
-
-# Logging and handling sensitive stuff
-from data_handling.custom_errors import OverTemperature, UnderTemperature
-from data_handling import custom_logger
-
-# Data types
-from data_handling.data_classes import Temperature
-from time import sleep
-
 import datetime
 import time
+from time import sleep
 
+from data_handling import custom_logger
+# Logging and handling sensitive stuff
+from data_handling.custom_errors import OverTemperature, UnderTemperature
+# Data types
+from data_handling.data_classes import Temperature
+from system import system_constants
+from system.active_components import Element, RegisterFlowController
 # System components
 from system.sensors import TargetTemperatureSensor, ElementSensor, TemperatureSensor
-from system.active_components import Element, RegisterFlowController
 
 # Setup system logger
 system_logger = custom_logger.create_system_logger()
@@ -35,12 +36,15 @@ class System(object):
         self.room_sensors = dict()
         self.room_dampers = dict()
 
+        self.external_temperature_sensor = TemperatureSensor("external")
+
         # define ids for rooms
         room_ids = range(1, 3)
 
         # Setup dampers and sensors for each room
         for _id in room_ids:
-            self.room_sensors[_id] = TemperatureSensor(_id=_id)
+            # todo: Gather target temperature
+            self.room_sensors[_id] = TargetTemperatureSensor(_id=_id, target_temperature=0.0)
             self.room_dampers[_id] = RegisterFlowController(id=_id, pin=None)
 
         # Setup element sensors
@@ -60,7 +64,37 @@ class System(object):
         :return:
         """
 
-        pass
+        # Store the start time of the cycle
+        previous_time = datetime.datetime.now()
+
+        # Get external temperature
+        external_temp = self.external_temperature_sensor.get_temperature()
+
+        # Gather and check for temperatures over the element limits
+        for es in self.element_sensors:
+            element_temp = es.get_temperature()
+            try:
+                es.check_temperature_limits(element_temp)
+            except OverTemperature or UnderTemperature:
+                # Disables the element in an over/under temperature condition
+                self.element.enabled = False
+
+        # Iterate through each room and get the temperatures
+        room_readings = {}
+        for _id, sensor in self.room_sensors.items():
+
+            # Gets the current room temperature
+            current_room_temp = sensor.get_temperature()
+
+            # Calculates the temperature delta for the room
+            delta_temp = sensor.temperature_error(current_room_temp)
+
+            # Stores the delta temperature in a dictionary with shared sensor keys
+            room_readings[_id] = delta_temp
+
+        # Calculate the system overall target vector based on a pid controller
+        # todo: implement this!
+        self.element.generate_new_target_vector(external_temp, room_readings)
 
     def enter_main_loop(self) -> None:
         """
@@ -90,7 +124,13 @@ class System(object):
             desired_delay_time = self.get_delay_time(delta_time)
             time.sleep(desired_delay_time)
 
-    def get_delay_time(self, cycle_time):
+    def get_delay_time(self, cycle_time: float) -> float:
+        """
+        Gets the desired delay time from a cycle duration.
+
+        :param cycle_time: The desired cycle time in seconds
+        :return:
+        """
         sleep_time = self.update_interval - cycle_time
 
         # Handle case where sleep time is less than 0.
@@ -98,7 +138,7 @@ class System(object):
         if sleep_time < 0:
             # Log a warning with time information about the cycle
             system_logger.warning(
-                f"Main loop took longer than {system_constants.system_update_interval} to complete."
+                f"Main loop took longer than {self.update_interval} to complete."
                 f"Consider changing the cycle time to a value greater than {cycle_time}"
                 f"to ensure cycle time is consistent!"
             )
@@ -119,7 +159,7 @@ def run_system():
     external_temp_sensor = TemperatureSensor("external")
 
     # Setup room sensors
-    room_temperature_sensors = [TargetTemperatureSensor(id, Temperature(20)) for id in range(3)]
+    room_temperature_sensors = [TargetTemperatureSensor(_id, Temperature(20)) for _id in range(3)]
 
     # Setup element sensors
     primary_element_monitor = ElementSensor("prim", system_constants.element_max_temp,

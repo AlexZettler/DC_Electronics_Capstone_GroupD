@@ -42,6 +42,7 @@ class TemperatureSensor(object):
 
         self.logger.info(msg=temp_reading)
 
+
 class TargetTemperatureSensor(TemperatureSensor):
     """
     A temperature sensor with a target temperature.
@@ -54,6 +55,12 @@ class TargetTemperatureSensor(TemperatureSensor):
         self.target_temp = target_temperature
 
     def temperature_error(self, temperature: Temperature):
+        """
+        Calculates the temperature delta from the target temperature
+
+        :param temperature: The current temperature to calculate the delta from
+        :return: The temperature delta
+        """
         return temperature - self.target_temp
 
 
