@@ -1,6 +1,7 @@
 # This file contains class definitions for active components (system outputs)
 
 
+# use https://pypi.org/project/PyBCM2835/
 import RPi.GPIO as IO
 
 from data_handling import custom_logger
@@ -15,7 +16,7 @@ IO.setmode(IO.BCM)
 
 class OutputController(object):
     def __init__(self, _id):
-        self._id = _id
+        self._room_id = _id
 
 
 class PID(OutputController):
@@ -24,9 +25,9 @@ class PID(OutputController):
     A class representing a PID interface for a device
     """
 
-    def __init__(self, _id, target, p, i, d, b):
+    def __init__(self, _room_id, target, p, i, d, b):
         # Sets output id
-        super().__init__(_id)
+        super().__init__(_room_id)
 
         # Set a target to compare error against
         self.target = target
@@ -117,8 +118,8 @@ class PID(OutputController):
 
 class Element(PID):
 
-    def __init__(self, _id, peltier_heating, enabled: bool):
-        super().__init__(_id=_id, target=0.0, p=0.0, i=0.0, d=0.0, b=0.0)
+    def __init__(self, _room_id, peltier_heating, enabled: bool):
+        super().__init__(_room_id=_room_id, target=0.0, p=0.0, i=0.0, d=0.0, b=0.0)
         self.heating = peltier_heating
         self.enabled = enabled
 
@@ -195,14 +196,20 @@ class RegisterFlowController(object):
     # Constant PWM signal frequency
     freq = 50.0
 
+    # Constant representing servo maximum turn rate
+    turn_rate = 0.5
+
+
+
     # https://circuitdigest.com/microcontroller-projects/raspberry-pi-pwm-tutorial
 
-    def __init__(self, id, pin):
+    def __init__(self, _id, pin):
         # Sets the
-        self.id = id
+        self._room_id = _id
         self._pin = pin
 
-        self.logger = custom_logger.create_output_logger(id)
+
+        self.logger = custom_logger.create_output_logger(_id)
 
         # todo: set channel up as an output
         ch = None
