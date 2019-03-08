@@ -4,19 +4,20 @@ import math
 import itertools
 import math
 
-servo_freq = 50
+import data_handling.linear_interpolation as li
 
+#servo_freq = 50
 GPIO.setmode(GPIO.BCM)
 
 # Setup servo
-GPIO.setup(18, GPIO.OUT)
-p = GPIO.PWM(18, servo_freq)  # channel=18 frequency=50Hz
-p.start(0)
+#GPIO.setup(18, GPIO.OUT)
+#p = GPIO.PWM(18, servo_freq)  # channel=18 frequency=50Hz
+#p.start(0)
 
-min_cycle = 0.45 / 20 * 100
-max_cycle = 2.5 / 20 * 100
+#min_cycle = 0.45 / 20 * 100
+#max_cycle = 2.5 / 20 * 100
 
-delta = max_cycle - min_cycle
+#delta = max_cycle - min_cycle
 
 
 def verify_pwm(duty_cycle: float):
@@ -61,7 +62,13 @@ class Servo(object):
         delta_angle = self.angle_at_max_duty - self.angle_at_min_duty
         delta_duty = self.max_duty - self.min_duty
 
-        angle_linear
+        # todo: add to object scope
+        line = li.Line(
+            x1=self.angle_at_max_duty,
+            x2=self.angle_at_min_duty,
+            y1=self.min_duty,
+            y2=self.max_duty
+        )
 
     def verify_angle(self, angle):
         """
