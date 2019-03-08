@@ -2,12 +2,12 @@
 Created by author: Lauritz V. Thaulow
 Created on: September 8, 2011
 
+Posed to stack Overflow linked below:
+    https://stackoverflow.com/questions/7343697/how-to-implement-linear-interpolation
+
 Modified by: Alexander Zettler
 Modified on: March 8, 2019
     Modified to support edge cases, increase readability, and create documentation.
-
-Posed to stack Overflow linked below:
-    https://stackoverflow.com/questions/7343697/how-to-implement-linear-interpolation
 """
 
 from bisect import bisect_left
@@ -24,6 +24,16 @@ class Line(object):
     def __getitem__(self, item):
         y = self.m * item + self.b
         return y
+
+    @staticmethod
+    def test_line():
+        l = Line(0, 10, -2, 2)
+        assert l[0] == -2
+        assert l[2.5] == -1
+        assert l[5] == 0
+        assert l[7.5] == 1
+        assert l[10] == 2
+        assert l[20] == 6
 
 
 class Interpolate(object):
