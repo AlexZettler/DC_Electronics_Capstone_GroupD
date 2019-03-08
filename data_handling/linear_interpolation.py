@@ -13,9 +13,22 @@ Posed to stack Overflow linked below:
 from bisect import bisect_left
 
 
+class Line(object):
+    def __init__(self, x1, x2, y1, y2):
+        delta_x = x2 - x1
+        delta_y = y2 - y1
+
+        self.m = delta_y / delta_x
+        self.b = y2
+
+    def __getitem__(self, item):
+        y = self.m * item + self.b
+        return y
+
+
 class Interpolate(object):
     """
-    This class is used to get linearly interprolated data points given a list of
+    This class is used to get linearly interpolated data points given a list of
     """
 
     def __init__(self, x_list: list, y_list: list):
