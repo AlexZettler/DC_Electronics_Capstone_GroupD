@@ -135,12 +135,18 @@ class Servo(object):
         commands = {
             "start": self.start,
             "stop": self.stop,
+<<<<<<< refs/remotes/origin/dev
             "set": self.apply_duty,
             "exit":
+=======
+            "set_duty": self.apply_duty,
+            "exit": None
+>>>>>>> More servo testing development
         }
 
         # Enter a null response
         response = ""
+<<<<<<< refs/remotes/origin/dev
 
         while response not in commands.keys():
             print(f"Valid commands are:n{'/n'.join(commands.keys())}")
@@ -149,8 +155,14 @@ class Servo(object):
 
 
 
+=======
+>>>>>>> More servo testing development
 
+        while response not in commands.keys():
+            print(f"Valid commands are:n{'/n'.join(commands.keys())}")
+            response = input("Please enter a command: ").lower()
 
+<<<<<<< refs/remotes/origin/dev
 
     def sin_response(self, resolution, response_freq):
         sleep_time = 1 / 2 / resolution / response_freq
@@ -176,10 +188,37 @@ try:
     time.sleep(0.5)
 
     while 1:
+=======
+        if response == "exit":
+            pass
+        elif response == "set_duty":
+            args = {}
+
+            duty_user_resp = float(input("Please enter a duty cycle: "))
+            args["duty"] = duty_user_resp
+
+>>>>>>> More servo testing development
 
 
-except KeyboardInterrupt:
-    pass
+        else:
+            commands[response]()
 
-p.stop()
+    def sin_response(self, resolution, response_freq):
+        sleep_time = 1 / 2 / resolution / response_freq
+
+        half_period_res = int(resolution / 2)
+
+        delta = self.max_duty - self.min_duty
+
+        # Define an iterable to model a triangle wave with 50% duty cycle
+        response = itertools.chain(range(0, half_period_res), range(half_period_res, 0, -1))
+
+        # Iterate through each
+        for sin_resp in iter(delta * math.sin(x / resolution) for x in response):
+            self.pwm.ChangeDutyCycle(self.min_duty + sin_resp)
+
+            # Wait whatever time dictated by resolution
+            time.sleep(sleep_time)
+
+
 GPIO.cleanup()
