@@ -12,4 +12,4 @@ if __name__ == "__main__":
         try:
             print("  %s - %s" % (addr, name))
         except UnicodeEncodeError:
-    print("  %s - %s" % (addr, name.encode('utf-8', 'replace')))
+            print("  %s - %s" % (addr, name.encode('utf-8', 'replace')))
