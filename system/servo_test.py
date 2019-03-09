@@ -6,18 +6,19 @@ import math
 
 import data_handling.linear_interpolation as li
 
-#servo_freq = 50
+# servo_freq = 50
 GPIO.setmode(GPIO.BCM)
 
+
 # Setup servo
-#GPIO.setup(18, GPIO.OUT)
-#p = GPIO.PWM(18, servo_freq)  # channel=18 frequency=50Hz
-#p.start(0)
+# GPIO.setup(18, GPIO.OUT)
+# p = GPIO.PWM(18, servo_freq)  # channel=18 frequency=50Hz
+# p.start(0)
 
-#min_cycle = 0.45 / 20 * 100
-#max_cycle = 2.5 / 20 * 100
+# min_cycle = 0.45 / 20 * 100
+# max_cycle = 2.5 / 20 * 100
 
-#delta = max_cycle - min_cycle
+# delta = max_cycle - min_cycle
 
 
 def verify_pwm(duty_cycle: float):
@@ -96,7 +97,7 @@ class Servo(object):
         if verify_pwm(duty):
             self._max_duty = duty
         else:
-            print(f"{duty} is an invalid duty cycle!")
+            raise ValueError(f"{duty} is an invalid duty cycle!")
 
     @property
     def min_duty(self):
@@ -108,7 +109,7 @@ class Servo(object):
             self._min_duty = duty
 
         else:
-            print(f"{duty} is an invalid duty cycle!")
+            raise ValueError(f"{duty} is an invalid duty cycle!")
 
     def set_max_duty_angle(self, angle: float):
         self.angle_at_max_duty = angle
@@ -130,14 +131,43 @@ class Servo(object):
 
     def run_config(self):
 
+        # Define the main commands of the program
         commands = {
             "start": self.start,
             "stop": self.stop,
             "set": self.apply_duty,
+            "exit":
         }
 
-        print(f"Valid commands are:n{'/n'.join(commands.keys())}")
+        # Enter a null response
+        response = ""
 
+        while response not in commands.keys():
+            print(f"Valid commands are:n{'/n'.join(commands.keys())}")
+            input("Please enter a command: ")
+
+
+
+
+
+
+
+    def sin_response(self, resolution, response_freq):
+        sleep_time = 1 / 2 / resolution / response_freq
+
+        half_period_res = int(resolution / 2)
+
+        delta = self.max_duty - self.min_duty
+
+        # Define an iterable to model a triangle wave with 50% duty cycle
+        response = itertools.chain(range(0, half_period_res), range(half_period_res, 0, -1))
+
+        # Iterate through each
+        for sin_resp in iter(delta * math.sin(x / resolution) for x in response):
+            self.pwm.ChangeDutyCycle(self.min_duty + sin_resp)
+
+            # Wait whatever time dictated by resolution
+            time.sleep(sleep_time)
 
 try:
     p.ChangeDutyCycle(min_cycle)
@@ -146,17 +176,7 @@ try:
     time.sleep(0.5)
 
     while 1:
-        res = 50
-        servo_freq = 0.1
-        sleep_time = 1 / 2 / res / servo_freq
 
-        half_period_res = int(res / 2)
-
-        for sin_resp in iter(
-                delta * math.sin(x / res) for x in
-                itertools.chain(range(0, half_period_res), range(half_period_res, 0, -1))):
-            p.ChangeDutyCycle(min_cycle + sin_resp)
-        time.sleep(sleep_time)
 
 except KeyboardInterrupt:
     pass
