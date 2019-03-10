@@ -41,6 +41,8 @@ class Interpolate(object):
     This class is used to get linearly interpolated data points given a list of
     """
 
+    # todo: Implement each section lookup as a line object
+
     def __init__(self, x_list: list, y_list: list):
 
         # Verify that x point are in ascending order
