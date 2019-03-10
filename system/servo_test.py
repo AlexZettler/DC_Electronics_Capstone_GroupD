@@ -7,6 +7,8 @@ import math
 import data_handling.linear_interpolation as li
 
 # servo_freq = 50
+
+# Configure the Pinmode as BCM addressed pins
 GPIO.setmode(GPIO.BCM)
 
 
@@ -33,13 +35,25 @@ class Servo(object):
     angular_velocity = 90.0
 
     def __init__(self, pin: int, min_duty: float, max_duty: float):
+        # Define the BCM pin to work with
         self.pin = pin
 
+        # Define max and min duty cycles
         self._min_duty = min_duty
         self._max_duty = max_duty
 
-        self.angle_at_min_duty: float = None
-        self.angle_at_max_duty: float = None
+        # Define max and min angles
+        self.angle_at_min_duty: float = 0.0
+        self.angle_at_max_duty: float = 90.0
+
+        # Create the angle duty cycle response line
+        self.line = None
+        self.create_line(
+            x1=self.angle_at_max_duty,
+            x2=self.angle_at_min_duty,
+            y1=self.min_duty,
+            y2=self.max_duty
+        )
 
         # Setup PWM controller
         GPIO.setup(self.pin, GPIO.OUT)
@@ -59,17 +73,10 @@ class Servo(object):
         if not self.verify_angle(angle):
             raise ValueError(f"{angle} is outside of PWM controllers limits.")
 
-        # Calculate deltas for y=mx+b formula
-        delta_angle = self.angle_at_max_duty - self.angle_at_min_duty
-        delta_duty = self.max_duty - self.min_duty
+        if self.line is None:
+            raise Exception(f"Line must be setup before the angle can be calculated.")
 
-        # todo: add to object scope
-        line = li.Line(
-            x1=self.angle_at_max_duty,
-            x2=self.angle_at_min_duty,
-            y1=self.min_duty,
-            y2=self.max_duty
-        )
+        return self.line[angle]
 
     def verify_angle(self, angle):
         """
@@ -129,6 +136,19 @@ class Servo(object):
         time_to_change = delta_angle / self.angular_velocity
         return time_to_change
 
+    def create_line(self, x1, x2, y1, y2):
+        # todo: add to object scope
+        self.line = li.Line(
+            x1=x1,
+            x2=x2,
+            y1=y1,
+            y2=y2
+        )
+
+        # Calculate deltas for y=mx+b formula
+        delta_angle = self.angle_at_max_duty - self.angle_at_min_duty
+        delta_duty = self.max_duty - self.min_duty
+
     def run_config(self):
 
         # Define the main commands of the program
@@ -152,6 +172,7 @@ class Servo(object):
             print(f"Valid commands are:n{'/n'.join(commands.keys())}")
             input("Please enter a command: ")
 
+<<<<<<< HEAD
 
 
 
@@ -164,6 +185,8 @@ class Servo(object):
 
 <<<<<<< refs/remotes/origin/dev
 
+=======
+>>>>>>> dev
     def sin_response(self, resolution, response_freq):
         sleep_time = 1 / 2 / resolution / response_freq
 
@@ -181,6 +204,7 @@ class Servo(object):
             # Wait whatever time dictated by resolution
             time.sleep(sleep_time)
 
+<<<<<<< HEAD
 try:
     p.ChangeDutyCycle(min_cycle)
     time.sleep(0.5)
@@ -220,5 +244,7 @@ try:
             # Wait whatever time dictated by resolution
             time.sleep(sleep_time)
 
+=======
+>>>>>>> dev
 
 GPIO.cleanup()

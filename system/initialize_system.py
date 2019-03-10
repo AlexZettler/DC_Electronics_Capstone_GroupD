@@ -61,7 +61,7 @@ class System(object):
         """
         Method for running a system cycle
 
-        :return:
+        :return: None
         """
 
         # Store the start time of the cycle
