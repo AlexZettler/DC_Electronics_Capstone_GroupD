@@ -28,7 +28,11 @@ def verify_pwm(duty_cycle: float):
 
 
 class Servo(object):
-    seconds_to_keep = 1.0
+    """
+    Represents a servo capable of rotating a variable number of degrees
+    """
+
+    # The frequency of the PWM signal
     pwm_freq = 50.0
 
     # In degrees per second
@@ -38,21 +42,12 @@ class Servo(object):
         # Define the BCM pin to work with
         self.pin = pin
 
-        # Define max and min duty cycles
-        self._min_duty = min_duty
-        self._max_duty = max_duty
-
-        # Define max and min angles
-        self.angle_at_min_duty: float = 0.0
-        self.angle_at_max_duty: float = 90.0
-
         # Create the angle duty cycle response line
-        self.line = None
-        self.create_line(
-            x1=self.angle_at_max_duty,
-            x2=self.angle_at_min_duty,
-            y1=self.min_duty,
-            y2=self.max_duty
+        self.line = li.Line(
+            x1=0.0,
+            x2=90.0,
+            y1=min_duty,
+            y2=max_duty
         )
 
         # Setup PWM controller
@@ -63,19 +58,29 @@ class Servo(object):
         self.start()
 
     def start(self):
-        # Setup servo
         self.pwm.start(0)
 
     def stop(self):
         self.pwm.stop()
 
-    def set_angle(self, angle):
+    def rotate_to_angle(self, angle: float) -> None:
+        """
+        Rotates the servo to a given degree
+
+        :param angle: The angle to rotate the servo to
+        :return: None
+        """
+        self.pwm.ChangeDutyCycle(self.get_angle_pwm(angle))
+
+    def get_angle_pwm(self, angle: float) -> float:
+        """
+        Retrieves the pwm duty cycle from an angle based on a line drawn between two points
+
+        :param angle: The angle to retrieve the PWM signal for
+        :return: The pwm duty cycle at the given angle
+        """
         if not self.verify_angle(angle):
             raise ValueError(f"{angle} is outside of PWM controllers limits.")
-
-        if self.line is None:
-            raise Exception(f"Line must be setup before the angle can be calculated.")
-
         return self.line[angle]
 
     def verify_angle(self, angle):
@@ -95,35 +100,6 @@ class Servo(object):
         else:
             print(f"{duty} is an invalid duty cycle!")
 
-    @property
-    def max_duty(self):
-        return self.max_duty
-
-    @max_duty.setter
-    def max_duty(self, duty: float):
-        if verify_pwm(duty):
-            self._max_duty = duty
-        else:
-            raise ValueError(f"{duty} is an invalid duty cycle!")
-
-    @property
-    def min_duty(self):
-        return self._min_duty
-
-    @min_duty.setter
-    def min_duty(self, duty: float):
-        if verify_pwm(duty):
-            self._min_duty = duty
-
-        else:
-            raise ValueError(f"{duty} is an invalid duty cycle!")
-
-    def set_max_duty_angle(self, angle: float):
-        self.angle_at_max_duty = angle
-
-    def set_min_duty_angle(self, angle: float):
-        self.angle_at_min_duty = angle
-
     def get_time_to_adjust(self, current_angle: float, target_angle: float):
         """
         Gets the time required to change the servo angle based on the angles given
@@ -136,93 +112,31 @@ class Servo(object):
         time_to_change = delta_angle / self.angular_velocity
         return time_to_change
 
-    def create_line(self, x1, x2, y1, y2):
-        # todo: add to object scope
-        self.line = li.Line(
-            x1=x1,
-            x2=x2,
-            y1=y1,
-            y2=y2
-        )
-
-        # Calculate deltas for y=mx+b formula
-        delta_angle = self.angle_at_max_duty - self.angle_at_min_duty
-        delta_duty = self.max_duty - self.min_duty
-
     def run_config(self):
 
         # Define the main commands of the program
         commands = {
             "start": self.start,
             "stop": self.stop,
-<<<<<<< refs/remotes/origin/dev
             "set": self.apply_duty,
-            "exit":
-=======
-            "set_duty": self.apply_duty,
             "exit": None
->>>>>>> More servo testing development
         }
 
         # Enter a null response
         response = ""
-<<<<<<< refs/remotes/origin/dev
-
-        while response not in commands.keys():
-            print(f"Valid commands are:n{'/n'.join(commands.keys())}")
-            input("Please enter a command: ")
-
-<<<<<<< HEAD
-
-
-
-=======
->>>>>>> More servo testing development
 
         while response not in commands.keys():
             print(f"Valid commands are:n{'/n'.join(commands.keys())}")
             response = input("Please enter a command: ").lower()
 
-<<<<<<< refs/remotes/origin/dev
-
-=======
->>>>>>> dev
-    def sin_response(self, resolution, response_freq):
-        sleep_time = 1 / 2 / resolution / response_freq
-
-        half_period_res = int(resolution / 2)
-
-        delta = self.max_duty - self.min_duty
-
-        # Define an iterable to model a triangle wave with 50% duty cycle
-        response = itertools.chain(range(0, half_period_res), range(half_period_res, 0, -1))
-
-        # Iterate through each
-        for sin_resp in iter(delta * math.sin(x / resolution) for x in response):
-            self.pwm.ChangeDutyCycle(self.min_duty + sin_resp)
-
-            # Wait whatever time dictated by resolution
-            time.sleep(sleep_time)
-
-<<<<<<< HEAD
-try:
-    p.ChangeDutyCycle(min_cycle)
-    time.sleep(0.5)
-    p.ChangeDutyCycle(max_cycle)
-    time.sleep(0.5)
-
-    while 1:
-=======
         if response == "exit":
             pass
         elif response == "set_duty":
-            args = {}
+            kwargs = {}
 
             duty_user_resp = float(input("Please enter a duty cycle: "))
-            args["duty"] = duty_user_resp
-
->>>>>>> More servo testing development
-
+            kwargs["duty"] = duty_user_resp
+            commands[response](**kwargs)
 
         else:
             commands[response]()
@@ -244,7 +158,5 @@ try:
             # Wait whatever time dictated by resolution
             time.sleep(sleep_time)
 
-=======
->>>>>>> dev
 
 GPIO.cleanup()

@@ -15,15 +15,59 @@ from bisect import bisect_left
 
 class Line(object):
     def __init__(self, x1, x2, y1, y2):
-        delta_x = x2 - x1
-        delta_y = y2 - y1
+        # Empty initialization
+        self._x1, self._x2 = None, None
+        self._y1, self._y2 = None, None
+        self.m = None
+        self.b = None
+
+        # Define our points
+        self.x1, self.x2 = x1, x2
+        self.y1, self.y2 = y1, y2
+
+        self.recalculate()
+
+    def recalculate(self):
+        delta_x = self._x2 - self._x1
+        delta_y = self._y2 - self._y1
 
         self.m = delta_y / delta_x
-        self.b = y1
+        self.b = self._y1 - (self._x1 * self.m)
+
+    @property
+    def x1(self):
+        return self._x1
+
+    @x1.setter
+    def x1(self, other):
+        self._x1 = other
+
+    @property
+    def x2(self):
+        return self._x1
+
+    @x2.setter
+    def x2(self, other):
+        self._x2 = other
+
+    @property
+    def y1(self):
+        return self._y1
+
+    @y1.setter
+    def y1(self, other):
+        self._y1 = other
+
+    @property
+    def y2(self):
+        return self._y2
+
+    @y2.setter
+    def y2(self, other):
+        self._y2 = other
 
     def __getitem__(self, item):
-        y = self.m * item + self.b
-        return y
+        return self.m * item + self.b
 
     @staticmethod
     def test_line():
