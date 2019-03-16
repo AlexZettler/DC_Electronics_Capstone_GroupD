@@ -174,8 +174,14 @@ class Element(PID):
             # todo: Set heating pin low
             # todo: Set cooling pin low
 
-    def generate_new_target_vector(self, main_temp, sensor_deltas: dict) -> None:
-        # Generate a new target vector based on a pid controller
+    def generate_target_vector(self, main_temp, sensor_deltas: dict) -> None:
+        """
+        Generate a new target vector based on a pid controller
+
+        :param main_temp:
+        :param sensor_deltas:
+        :return:
+        """
 
         # out_vector = self.update_with_values()
 
@@ -199,15 +205,12 @@ class RegisterFlowController(object):
     # Constant representing servo maximum turn rate
     turn_rate = 0.5
 
-
-
     # https://circuitdigest.com/microcontroller-projects/raspberry-pi-pwm-tutorial
 
     def __init__(self, _id, pin):
         # Sets the
         self._room_id = _id
         self._pin = pin
-
 
         self.logger = custom_logger.create_output_logger(_id)
 

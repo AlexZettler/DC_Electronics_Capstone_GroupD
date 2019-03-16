@@ -17,7 +17,7 @@ class VisApp(QMainWindow):
         self.left = 100
         self.top = 100
 
-        # Define the windw size
+        # Define the window size
         self.width = 640
         self.height = 480
 

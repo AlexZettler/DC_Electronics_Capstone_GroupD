@@ -19,7 +19,7 @@ class Line(object):
         delta_y = y2 - y1
 
         self.m = delta_y / delta_x
-        self.b = y2
+        self.b = y1
 
     def __getitem__(self, item):
         y = self.m * item + self.b
@@ -79,4 +79,4 @@ class Interpolate(object):
 
 
 if __name__ == "__main__":
-    pass
+    Line.test_line()

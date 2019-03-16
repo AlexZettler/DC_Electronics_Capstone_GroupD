@@ -94,7 +94,7 @@ class System(object):
 
         # Calculate the system overall target vector based on a pid controller
         # todo: implement this!
-        self.element.generate_new_target_vector(external_temp, room_readings)
+        self.element.generate_target_vector(external_temp, room_readings)
 
     def enter_main_loop(self) -> None:
         """
@@ -201,7 +201,7 @@ def run_system():
             room_readings.append(ts.temperature_error(current_room_temp))
 
         # Calculate the system overall target vector based on a pid controller
-        element.generate_new_target_vector(external_temp_sensor.get_temperature(), room_readings)
+        element.generate_target_vector(external_temp_sensor.get_temperature(), room_readings)
 
         # Wait a period of time defined
         sleep(system_constants.system_update_interval)
