@@ -1,5 +1,5 @@
 """
-The main system
+The main system definition file
 """
 
 # Generalized system configuration data
@@ -7,9 +7,10 @@ import datetime
 import time
 from time import sleep
 
-from data_handling import custom_logger
 # Logging and handling sensitive stuff
+from data_handling import custom_logger
 from data_handling.custom_errors import OverTemperature, UnderTemperature
+
 # Data types
 from data_handling.data_classes import Temperature
 from system import system_constants
@@ -19,6 +20,18 @@ from system.sensors import TargetTemperatureSensor, ElementSensor, TemperatureSe
 
 # Setup system logger
 system_logger = custom_logger.create_system_logger()
+
+
+class SystemUpdate(object):
+    """
+    This object is responsible for representing an update to the system.
+    This could be sent from the bluetooth device, or user input in a seperate command parsing process
+    """
+
+    def __init__(self, update_time: datetime.datetime, update_name: str, update_value: object):
+        self.update_time = update_time
+        self.update_name = update_name
+        self.update_value = update_value
 
 
 class System(object):
@@ -82,7 +95,6 @@ class System(object):
         # Iterate through each room and get the temperatures
         room_readings = {}
         for _id, sensor in self.room_sensors.items():
-
             # Gets the current room temperature
             current_room_temp = sensor.get_temperature()
 
@@ -147,7 +159,7 @@ class System(object):
         return sleep_time
 
 
-def run_system():
+def run_system(incoming_update_queue=None):
     """
     This function is being replaced by the System class
     """
@@ -181,6 +193,9 @@ def run_system():
 
     # Enter the infinite loop!
     while True:
+
+        if incoming_update_queue is not None:
+            pass
 
         # Gather and check for temperatures over the element limits
         for es in (primary_element_monitor, secondary_element_monitor):
