@@ -5,11 +5,18 @@ The main system definition file
 # Generalized system configuration data
 import datetime
 import time
+from threading import Lock, Thread
 from time import sleep
+
+# General BT stuff
+from bluetooth import *
 
 # Logging and handling sensitive stuff
 from data_handling import custom_logger
 from data_handling.custom_errors import OverTemperature, UnderTemperature
+
+# A bluetooth logging module used for sending new events over bluetooth
+from bluetooth_connection import bluetooth_logging_handler
 
 # Data types
 from data_handling.data_classes import Temperature
@@ -20,6 +27,9 @@ from system.sensors import TargetTemperatureSensor, ElementSensor, TemperatureSe
 
 # Setup system logger
 system_logger = custom_logger.create_system_logger()
+
+# Add bluetooth handler to basic system logger
+system_logger.addHandler(bluetooth_logging_handler.BTHandler())
 
 
 class SystemUpdate(object):
@@ -32,6 +42,92 @@ class SystemUpdate(object):
         self.update_time = update_time
         self.update_name = update_name
         self.update_value = update_value
+
+
+class BluetoothManager(object):
+    def __init__(self):
+        self.bt_lock = Lock()
+
+        # Configure bluetooth socket_server
+        self.socket_server = BluetoothSocket(RFCOMM)
+        self.socket_server.bind(("", PORT_ANY))
+        self.socket_server.listen(1)
+
+        # Get the port that the socket_server it bound to
+        self.port = self.socket_server.getsockname()[1]
+
+        self.uuid = "94f39d29-7d6d-437d-973b-fba39e49d4ee"
+
+    def initialize_connection(self):
+        pass
+
+    def transmitter_loop(self):
+        shared_queue = None
+        while True:
+            for d in shared_queue:
+                self.send_string(d)
+
+    def receiver_loop(self):
+        shared_queue = None
+        while True:
+            for d in shared_queue:
+                self.receive_data()
+
+    def advertise_service(self):
+        advertise_service(
+            server_sock, "SampleServer",
+            service_id=uuid,
+            service_classes=[uuid, SERIAL_PORT_CLASS],
+            profiles=[SERIAL_PORT_PROFILE],
+            # protocols = [ OBEX_UUID ]
+        )
+
+    def stop_server(self):
+        self.socket_server.close()
+        print("Server stopped")
+
+    def wait_for_client(self):
+
+        print(f"Waiting for connection on RFCOMM channel {self.port}")
+
+        self.client_sock, self.client_info = self.socket_server.accept()
+        print(f"Accepted connection from {self.client_info}")
+
+    def receive_data(self):
+
+        try:
+            while True:
+                data = self.socket_server.recv(1024)
+                if len(data) == 0:
+                    break
+
+                print(f"received [{data}]")
+
+        except IOError:
+            self.client_disconnected()
+
+    def send_string(self, _string):
+        print("Transmission begun.")
+        # for p in break_string_into_segmented_byte_list(_string, None):
+        self.client_sock.send(_string)
+
+        print("Transmission complete.")
+
+    def client_disconnected(self):
+        self.client_sock = None
+        self.client_info = None
+        client_sock.close()
+
+        print("Client disconnected")
+
+    def advertise_service(self):
+        advertise_service(
+            server_sock, "SampleServer",
+            service_id=uuid,
+            service_classes=[uuid, SERIAL_PORT_CLASS],
+            profiles=[SERIAL_PORT_PROFILE],
+            # protocols = [ OBEX_UUID ]
+        )
 
 
 class System(object):
