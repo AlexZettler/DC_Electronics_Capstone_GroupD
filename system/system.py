@@ -22,14 +22,16 @@ from bluetooth_connection import bluetooth_logging_handler
 from data_handling.data_classes import Temperature
 from system import system_constants
 from system.active_components import Element, RegisterFlowController
+
 # System components
-from system.sensors import TargetTemperatureSensor, ElementSensor, TemperatureSensor
+from system.sensors import TargetTemperatureSensor, ElementSensor, TemperatureSensor, W1Bus
 
 # Setup system logger
 system_logger = custom_logger.create_system_logger()
 
+
 # Add bluetooth handler to basic system logger
-system_logger.addHandler(bluetooth_logging_handler.BTHandler())
+# system_logger.addHandler(bluetooth_logging_handler.BTHandler())
 
 
 class SystemUpdate(object):
@@ -147,6 +149,10 @@ class InvalidCommand(Exception):
 
 class UpdateHandler(object):
     def __init__(self):
+        self.wait_for_input_command()
+
+    def wait_for_input_command(self):
+
         try:
             while True:
                 inp = input("Please enter a command: ")
@@ -155,8 +161,6 @@ class UpdateHandler(object):
                     self.command_dispatch(cmd)
                 except InvalidCommand:
                     pass
-
-
         except KeyboardInterrupt:
             pass
 
@@ -184,16 +188,28 @@ class System(object):
         self.room_sensors = dict()
         self.room_dampers = dict()
 
-        self.external_temperature_sensor = TemperatureSensor("external")
+        #todo: ADD UUID HERE
+        self.external_temperature_sensor = TemperatureSensor("external", None)
 
         # define ids for rooms
         room_ids = range(1, 3)
 
+        connected_uuids = W1Bus()
+        for _uuid in system_constants.room_temp_UUID_list:
+            if _uuid not in connected_uuids:
+                print(f"The temperature sensor with ID: {_uuid} was unable to be located on the 1W-BUS")
+
         # Setup dampers and sensors for each room
         for _id in room_ids:
             # todo: Gather target temperature
-            self.room_sensors[_id] = TargetTemperatureSensor(_id=_id, target_temperature=Temperature(0.0))
-            self.room_dampers[_id] = RegisterFlowController(_id=_id, pin=None)
+            self.room_sensors[_id] = TargetTemperatureSensor(
+                _id=_id,
+                _uuid=system_constants.room_temperature_UUIDS[_id],
+                target_temperature=Temperature(20.0))
+
+            self.room_dampers[_id] = RegisterFlowController(
+                _id=_id,
+                pin=system_constants.room_temperature_UUIDS[_id])
 
         # Setup element sensors
         self.element_sensors = {
@@ -212,9 +228,6 @@ class System(object):
         :return: None
         """
 
-        # Store the start time of the cycle
-        previous_time = datetime.datetime.now()
-
         # Get external temperature
         external_temp = self.external_temperature_sensor.get_temperature()
 
@@ -223,8 +236,9 @@ class System(object):
             element_temp = es.get_temperature()
             try:
                 es.check_temperature_limits(element_temp)
+
+            # Disables the element in an over/under temperature condition
             except OverTemperature or UnderTemperature:
-                # Disables the element in an over/under temperature condition
                 self.element.enabled = False
 
         # Iterate through each room and get the temperatures

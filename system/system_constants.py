@@ -23,15 +23,15 @@ system_update_interval = 0.2
 ##################
 
 # Define system pins
-heating_pin = None
-cooling_pin = None
+heating_pin, cooling_pin = 23, 24
 
 # Define room pins from ID: pin_name pair
-room_servo_pins = {_id: pin_name for _id, pin_name in enumerate(iterable=(12, 13, 14))}
+room_servo_pins = {_id: pin_name for _id, pin_name in enumerate(iterable=(13, 19, 26))}
 
-# Define room sensors from ID: UUID pair
 # todo: gather UUIDs for each sensor
-room_temperature_UUIDS = {_id: pin_name for _id, pin_name in enumerate(iterable=(12, 13, 14))}
+room_temp_UUID_list = []
+# Define room sensors from ID: UUID pair
+room_temperature_UUIDS = {_id: pin_name for _id, pin_name in enumerate(iterable=room_temp_UUID_list)}
 
 #####################
 # Logging constants #
