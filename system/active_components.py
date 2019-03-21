@@ -2,16 +2,17 @@
 
 
 # use https://pypi.org/project/PyBCM2835/
-import RPi.GPIO as IO
+import RPi.GPIO as GPIO
 
 from data_handling import custom_logger
 import time
+from system.system_constants import heating_pin, cooling_pin
 
 # Create a logger for general system information
 system_logger = custom_logger.create_system_logger()
 
 # Set Raspberry Pi pinout mode
-IO.setmode(IO.BCM)
+GPIO.setmode(GPIO.BCM)
 
 
 class OutputController(object):
@@ -118,10 +119,13 @@ class PID(OutputController):
 
 class Element(PID):
 
-    def __init__(self, _room_id, peltier_heating, enabled: bool):
+    def __init__(self, _room_id, peltier_heating):
         super().__init__(_room_id=_room_id, target=0.0, p=0.0, i=0.0, d=0.0, b=0.0)
         self.heating = peltier_heating
-        self.enabled = enabled
+        self.enabled = False
+
+        GPIO.setup(heating_pin, GPIO.OUT)
+        GPIO.setup(cooling_pin, GPIO.OUT)
 
     @property
     def heating(self) -> bool:
@@ -162,17 +166,18 @@ class Element(PID):
         if self.enabled:
             if self.heating:
                 system_logger.info("Is now heating")
-                # todo:  Set cooling pin low
-                # todo:  Set heating pin high
+                GPIO.output(cooling_pin, False)
+                GPIO.output(heating_pin, True)
+
             else:
                 system_logger.info("Is now cooling")
-                # todo:  Set heating pin low
-                # todo:  Set cooling pin high
+                GPIO.output(heating_pin, False)
+                GPIO.output(cooling_pin, True)
 
         else:
             system_logger.info("Is now disabled")
-            # todo: Set heating pin low
-            # todo: Set cooling pin low
+            GPIO.output(heating_pin, False)
+            GPIO.output(cooling_pin, False)
 
     def generate_target_vector(self, main_temp, sensor_deltas: dict) -> None:
         """
@@ -199,6 +204,8 @@ class Element(PID):
 
 
 class RegisterFlowController(object):
+    # Todo: merge servo test into this class, as it is a more robust solution
+
     # Constant PWM signal frequency
     freq = 50.0
 
@@ -214,12 +221,10 @@ class RegisterFlowController(object):
 
         self.logger = custom_logger.create_output_logger(_id)
 
-        # todo: set channel up as an output
-        ch = None
         self.last_pos = 0.0
 
-        IO.setup(self._pin, IO.OUT)
-        self.pwm_cont = IO.PWM(ch, self.freq)
+        GPIO.setup(self._pin, GPIO.OUT)
+        self.pwm_cont = GPIO.PWM(self._pin, self.freq)
 
         # start pwm controller with 0% duty cycle
         self.pwm_cont.start(0)

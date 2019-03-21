@@ -22,6 +22,7 @@ class TemperatureSensor(object):
     def get_temperature(self)->Temperature:
         """
         Retrieves measurement form the 1 wire interface and returns the results in degrees celsius
+
         :return: The temperature read in degrees celsius
         """
 

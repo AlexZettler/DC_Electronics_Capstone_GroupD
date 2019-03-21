@@ -141,6 +141,34 @@ class BluetoothManager(object):
         )
 
 
+class InvalidCommand(Exception):
+    pass
+
+
+class UpdateHandler(object):
+    def __init__(self):
+        try:
+            while True:
+                inp = input("Please enter a command: ")
+                try:
+                    cmd = self.input_parse(inp)
+                    self.command_dispatch(cmd)
+                except InvalidCommand:
+                    pass
+
+
+        except KeyboardInterrupt:
+            pass
+
+    def input_parse(self, inp):
+        cmd_args = inp.split()
+
+        # cmd_args[0]
+
+    def command_dispatch(self):
+        pass
+
+
 class System(object):
     """
     This class represents the main system.
@@ -150,7 +178,7 @@ class System(object):
     def __init__(self):
         self.update_interval = system_constants.system_update_interval
 
-        self.element = Element("element", peltier_heating=True, enabled=False)
+        self.element = Element("element", peltier_heating=True)
 
         # Define sensor and damper management hash tables
         self.room_sensors = dict()
@@ -164,8 +192,8 @@ class System(object):
         # Setup dampers and sensors for each room
         for _id in room_ids:
             # todo: Gather target temperature
-            self.room_sensors[_id] = TargetTemperatureSensor(_id=_id, target_temperature=0.0)
-            self.room_dampers[_id] = RegisterFlowController(id=_id, pin=None)
+            self.room_sensors[_id] = TargetTemperatureSensor(_id=_id, target_temperature=Temperature(0.0))
+            self.room_dampers[_id] = RegisterFlowController(_id=_id, pin=None)
 
         # Setup element sensors
         self.element_sensors = {
@@ -278,7 +306,7 @@ def run_system(incoming_update_queue=None):
     external_temp_sensor = TemperatureSensor("external")
 
     # Setup room sensors
-    room_temperature_sensors = [TargetTemperatureSensor(_id, Temperature(20)) for _id in range(3)]
+    room_temperature_sensors = [TargetTemperatureSensor(_id, Temperature(20.0)) for _id in range(3)]
 
     # Setup element sensors
     primary_element_monitor = ElementSensor("prim", system_constants.element_max_temp,
@@ -334,4 +362,5 @@ def run_system(incoming_update_queue=None):
 
 
 if __name__ == "__main__":
-    run_system()
+    # run_system()
+    sys = System()
