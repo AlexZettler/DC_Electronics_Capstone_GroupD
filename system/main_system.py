@@ -209,16 +209,22 @@ class System(object):
 
             self.room_dampers[_id] = RegisterFlowController(
                 _id=_id,
-                pin=system_constants.room_temperature_UUIDS[_id])
+                pin=system_constants.room_servo_pins[_id])
 
         # Setup element sensors
         self.element_sensors = {
-            name: ElementSensor(
-                _id=name,
+            "prim": ElementSensor(
+                _id="prim",
+                _uuid=system_constants.element_sensor_UUIDs["prim"],
                 max_temp=system_constants.element_max_temp,
                 min_temp=system_constants.element_min_temp
-            )
-            for name in ("prim", "sec")
+            ),
+            "sec": ElementSensor(
+                _id="prim",
+                _uuid=system_constants.element_sensor_UUIDs["prim"],
+                max_temp=system_constants.element_max_temp,
+                min_temp=system_constants.element_min_temp
+                )
         }
 
     def handle_cycle(self) -> None:

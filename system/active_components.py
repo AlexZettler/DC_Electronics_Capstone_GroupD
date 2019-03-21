@@ -121,11 +121,14 @@ class Element(PID):
 
     def __init__(self, _room_id, peltier_heating):
         super().__init__(_room_id=_room_id, target=0.0, p=0.0, i=0.0, d=0.0, b=0.0)
-        self.heating = peltier_heating
-        self.enabled = False
 
         GPIO.setup(heating_pin, GPIO.OUT)
         GPIO.setup(cooling_pin, GPIO.OUT)
+        
+        self.heating = peltier_heating
+        self.enabled = False
+
+
 
     @property
     def heating(self) -> bool:
@@ -222,7 +225,8 @@ class RegisterFlowController(object):
         self.logger = custom_logger.create_output_logger(_id)
 
         self.last_pos = 0.0
-
+        
+        print(self._pin)
         GPIO.setup(self._pin, GPIO.OUT)
         self.pwm_cont = GPIO.PWM(self._pin, self.freq)
 

@@ -29,7 +29,12 @@ heating_pin, cooling_pin = 23, 24
 room_servo_pins = {_id: pin_name for _id, pin_name in enumerate(iterable=(13, 19, 26))}
 
 # todo: gather UUIDs for each sensor
-room_temp_UUID_list = []
+room_temp_UUID_list = ["00000b0bd120","00000b0be1c7","00000b0bf3f0"]
+
+element_sensor_UUIDs = {
+    "prim":"00000b0bd9e2",
+    "sec": "00000b0bd7af"}
+
 # Define room sensors from ID: UUID pair
 room_temperature_UUIDS = {_id: pin_name for _id, pin_name in enumerate(iterable=room_temp_UUID_list)}
 

@@ -64,6 +64,7 @@ def create_system_logger():
     logger.setLevel(logging.INFO)
 
     file_name = os.path.join(log_directories["system"], "system.csv")
+    print(file_name)
     create_path_for_file(file_name)
 
     f_handler = logging.FileHandler(file_name)
@@ -85,7 +86,10 @@ def create_path_for_file(file):
     :return: None
     """
     abs_file_path = os.path.abspath(file)
-    dir_path = '\\'.join(abs_file_path.split('\\')[0:-1])
+    print("abs_path", abs_file_path)
+    dir_path = '/'.join(abs_file_path.split('/')[:-1])
+    print("dir_path", dir_path)
+
     if not path.exists(dir_path):
         os.makedirs(dir_path)
 
