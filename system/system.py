@@ -47,7 +47,10 @@ class SystemUpdate(object):
 class BluetoothManager(object):
     def __init__(self):
         self.bt_lock = Lock()
+        self.initialize_connection()
+        self.setup_threads()
 
+    def initialize_connection(self):
         # Configure bluetooth socket_server
         self.socket_server = BluetoothSocket(RFCOMM)
         self.socket_server.bind(("", PORT_ANY))
@@ -58,8 +61,16 @@ class BluetoothManager(object):
 
         self.uuid = "94f39d29-7d6d-437d-973b-fba39e49d4ee"
 
-    def initialize_connection(self):
-        pass
+    def setup_threads(self) -> None:
+        """
+        Setup threads for transmission and receiving
+        :return: None
+        """
+        self.receiver_thread = Thread(target=self.receiver_loop, name=None, args=(), kwargs={}, daemon=None)
+        self.transmitter_thread = Thread(target=self.transmitter_loop, name=None, args=(), kwargs={}, daemon=None)
+
+        self.receiver_thread.start()
+        self.transmitter_thread.start()
 
     def transmitter_loop(self):
         shared_queue = None
@@ -116,7 +127,7 @@ class BluetoothManager(object):
     def client_disconnected(self):
         self.client_sock = None
         self.client_info = None
-        client_sock.close()
+        self.client_sock.close()
 
         print("Client disconnected")
 
