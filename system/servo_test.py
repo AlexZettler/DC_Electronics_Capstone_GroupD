@@ -32,6 +32,14 @@ class Servo(object):
         "low": 0.4,
     }
 
+<<<<<<< HEAD
+=======
+class Servo(object):
+    """
+    Represents a servo capable of rotating a variable number of degrees
+    """
+
+>>>>>>> dev
     # The frequency of the PWM signal
     pwm_freq = 50.0
 
@@ -71,11 +79,19 @@ class Servo(object):
         :return: None
         """
         self.pwm.ChangeDutyCycle(self.get_angle_pwm(angle))
+<<<<<<< HEAD
 
     def get_angle_pwm(self, angle: float) -> float:
         """
         Retrieves the pwm duty cycle from an angle based on a line drawn between two points
 
+=======
+
+    def get_angle_pwm(self, angle: float) -> float:
+        """
+        Retrieves the pwm duty cycle from an angle based on a line drawn between two points
+
+>>>>>>> dev
         :param angle: The angle to retrieve the PWM signal for
         :return: The pwm duty cycle at the given angle
         """

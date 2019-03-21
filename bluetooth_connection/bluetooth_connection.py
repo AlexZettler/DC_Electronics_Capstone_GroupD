@@ -7,8 +7,8 @@ def get_device_ids():
     nearby_devices = bluetooth.discover_devices(
     duration=8, lookup_names=True, flush_cache=True, lookup_class=False)
 
-    numn_devices = len(nearby_devices)
-    print(f"found {numn_devices} devices")
+    num_devices = len(nearby_devices)
+    print(f"found {num_devices} devices")
 
     for addr, name in nearby_devices:
     
