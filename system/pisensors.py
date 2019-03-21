@@ -606,7 +606,7 @@ class W1Bus(list):
         """
 
         # return the entirety of the list
-        return self[:]
+        return self
 
     @classmethod
     def get_base_directory(cls) -> str:
