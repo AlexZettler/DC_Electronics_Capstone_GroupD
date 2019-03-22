@@ -16,7 +16,7 @@ element_min_temp = Temperature(-20.0)
 ##################
 
 # Define the system loop delay
-system_update_interval = 0.2
+system_update_interval = 5.0
 
 ##################
 # Pin constants #
@@ -33,7 +33,10 @@ room_temp_UUID_list = ["00000b0bd120","00000b0be1c7","00000b0bf3f0"]
 
 element_sensor_UUIDs = {
     "prim":"00000b0bd9e2",
-    "sec": "00000b0bd7af"}
+    "sec": "00000b0bd7af"
+    }
+
+external_sensor_UUID = "DUMMY"
 
 # Define room sensors from ID: UUID pair
 room_temperature_UUIDS = {_id: pin_name for _id, pin_name in enumerate(iterable=room_temp_UUID_list)}
@@ -43,7 +46,7 @@ room_temperature_UUIDS = {_id: pin_name for _id, pin_name in enumerate(iterable=
 #####################
 
 # Use this for a relative path
-base_log_directory = "./log/"
+base_log_directory = "/home/pi/ownCloud/Documents/Group4/system/log/"
 
 # Define directories to place log files into
 log_directories = {

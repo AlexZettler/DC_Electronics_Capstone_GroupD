@@ -192,7 +192,7 @@ class System(object):
         self.external_temperature_sensor = TemperatureSensor("external", None)
 
         # define ids for rooms
-        room_ids = range(1, 3)
+        room_ids = range(3)
 
         connected_uuids = W1Bus()
         for _uuid in system_constants.room_temp_UUID_list:
@@ -220,8 +220,8 @@ class System(object):
                 min_temp=system_constants.element_min_temp
             ),
             "sec": ElementSensor(
-                _id="prim",
-                _uuid=system_constants.element_sensor_UUIDs["prim"],
+                _id="sec",
+                _uuid=system_constants.element_sensor_UUIDs["sec"],
                 max_temp=system_constants.element_max_temp,
                 min_temp=system_constants.element_min_temp
                 )
@@ -235,10 +235,11 @@ class System(object):
         """
 
         # Get external temperature
-        external_temp = self.external_temperature_sensor.get_temperature()
+        #TODO: get sensor id for external sensor
+        #external_temp = self.external_temperature_sensor.get_temperature()
 
         # Gather and check for temperatures over the element limits
-        for es in self.element_sensors:
+        for es in self.element_sensors.values():
             element_temp = es.get_temperature()
             try:
                 es.check_temperature_limits(element_temp)
@@ -261,7 +262,7 @@ class System(object):
 
         # Calculate the system overall target vector based on a pid controller
         # todo: implement this!
-        self.element.generate_target_vector(external_temp, room_readings)
+        #self.element.generate_target_vector(external_temp, room_readings)
 
     def enter_main_loop(self) -> None:
         """
@@ -335,10 +336,10 @@ def run_system(incoming_update_queue=None):
                                               system_constants.element_min_temp)
 
     # Set up our active components
-    element = Element("elem", peltier_heating=True, enabled=False)
+    element = Element("elem", peltier_heating=True)
 
     # Define room valves
-    register_valves = [RegisterFlowController(id, "Dummy pin") for id in range(3)]
+    register_valves = [RegisterFlowController(_id, "Dummy pin") for i_d in range(3)]
 
     # Enable the main temperature control loop of the element
     element.enabled = True

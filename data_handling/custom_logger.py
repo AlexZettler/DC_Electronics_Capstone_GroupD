@@ -13,21 +13,25 @@ def create_measurement_logger(device_id):
 
     # Create a unique logging address for the device
     logger = logging.getLogger(f"measurement-{device_id}")
-    logger.setLevel(logging.INFO)
+    
+        
+    if not logger.hasHandlers():
+        
+        logger.setLevel(logging.INFO)
 
 
-    # Define a fielpath for the measuremet logger
-    file_name = os.path.join(log_directories["measurements"], f"{device_id}.csv")
-    create_path_for_file(file_name)
+        # Define a fielpath for the measuremet logger
+        file_name = os.path.join(log_directories["measurements"], f"{device_id}.csv")
+        create_path_for_file(file_name)
 
-    # Create a file formatter for the logger
-    f_handler = logging.FileHandler(file_name)
-    f_handler.setFormatter(csv_formatter)
-    logger.addHandler(f_handler)
+        # Create a file formatter for the logger
+        f_handler = logging.FileHandler(file_name)
+        f_handler.setFormatter(csv_formatter)
+        logger.addHandler(f_handler)
 
-    # Create a stream formatter for the logger
-    s_handler = logging.StreamHandler()
-    s_handler.setFormatter(cons_formatter)
+        # Create a stream formatter for the logger
+        s_handler = logging.StreamHandler()
+        s_handler.setFormatter(cons_formatter)
     logger.addHandler(s_handler)
 
     # Return the logger object
@@ -40,18 +44,21 @@ def create_output_logger(device_id):
     :return: A logger configured to write to the correct directory
     """
     logger = logging.getLogger(f"output-{device_id}")
-    logger.setLevel(logging.INFO)
+    
+    if not logger.hasHandlers():
+    
+        logger.setLevel(logging.INFO)
 
-    file_name = os.path.join(log_directories["measurements"], f"{device_id}.csv")
-    create_path_for_file(file_name)
+        file_name = os.path.join(log_directories["outputs"], f"{device_id}.csv")
+        create_path_for_file(file_name)
 
-    f_handler = logging.FileHandler(file_name)
-    f_handler.setFormatter(csv_formatter)
-    logger.addHandler(f_handler)
+        f_handler = logging.FileHandler(file_name)
+        f_handler.setFormatter(csv_formatter)
+        logger.addHandler(f_handler)
 
-    s_handler = logging.StreamHandler()
-    s_handler.setFormatter(cons_formatter)
-    logger.addHandler(s_handler)
+        s_handler = logging.StreamHandler()
+        s_handler.setFormatter(cons_formatter)
+        logger.addHandler(s_handler)
 
     return logger
 
@@ -61,19 +68,22 @@ def create_system_logger():
     :return: A logger configured to write to the correct directory
     """
     logger = logging.getLogger("system")
-    logger.setLevel(logging.INFO)
+    
+    if not logger.hasHandlers():
+    
+        logger.setLevel(logging.INFO)
 
-    file_name = os.path.join(log_directories["system"], "system.csv")
-    print(file_name)
-    create_path_for_file(file_name)
+        file_name = os.path.join(log_directories["system"], "system.csv")
+        print(f"Creating directories for {file_name}")
+        create_path_for_file(file_name)
 
-    f_handler = logging.FileHandler(file_name)
-    f_handler.setFormatter(csv_formatter)
-    logger.addHandler(f_handler)
+        f_handler = logging.FileHandler(file_name)
+        f_handler.setFormatter(csv_formatter)
+        logger.addHandler(f_handler)
 
-    s_handler = logging.StreamHandler()
-    s_handler.setFormatter(cons_formatter)
-    logger.addHandler(s_handler)
+        s_handler = logging.StreamHandler()
+        s_handler.setFormatter(cons_formatter)
+        logger.addHandler(s_handler)
 
     return logger
 

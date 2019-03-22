@@ -81,6 +81,8 @@ class TemperatureSensor(object):
         Opens the device temperature reading file and retrieves all lines of the file
         """
 
+        print(f"sensor id being read ID: {self._id}")
+
         # using the with open statement,
         # python will handle the closing of the file once it has broken from the with structure
         with open(self._file_path, 'r') as reading_file:
