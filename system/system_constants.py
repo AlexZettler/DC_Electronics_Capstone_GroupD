@@ -28,18 +28,24 @@ heating_pin, cooling_pin = 23, 24
 # Define room pins from ID: pin_name pair
 room_servo_pins = {_id: pin_name for _id, pin_name in enumerate(iterable=(13, 19, 26))}
 
-# todo: gather UUIDs for each sensor
-room_temp_UUID_list = ["00000b0bd120","00000b0be1c7","00000b0bf3f0"]
+# Define room sensors from ID: UUID pair
+room_temp_UUID_list = ["00000b0bd120", "00000b0be1c7", "00000b0bf3f0"]
+room_temperature_UUIDS = {_id: pin_name for _id, pin_name in enumerate(iterable=room_temp_UUID_list)}
 
 element_sensor_UUIDs = {
-    "prim":"00000b0bd9e2",
+    "prim": "00000b0bd9e2",
     "sec": "00000b0bd7af"
-    }
+}
 
-external_sensor_UUID = "DUMMY"
+# Define the external temperature around the system
+external_sensor_UUID = {"external": "DUMMY"}
 
-# Define room sensors from ID: UUID pair
-room_temperature_UUIDS = {_id: pin_name for _id, pin_name in enumerate(iterable=room_temp_UUID_list)}
+# Create a complete dict of k:UUID sensor pairs
+sensor_UUIDS = {
+    **room_temperature_UUIDS,
+    **element_sensor_UUIDs,
+    **external_sensor_UUID
+}
 
 #####################
 # Logging constants #

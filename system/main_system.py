@@ -6,7 +6,11 @@ The main system definition file
 import datetime
 import time
 from threading import Lock, Thread
+import queue
+
 from time import sleep
+
+import itertools
 
 # General BT stuff
 from bluetooth import *
@@ -16,7 +20,7 @@ from data_handling import custom_logger
 from data_handling.custom_errors import OverTemperature, UnderTemperature
 
 # A bluetooth logging module used for sending new events over bluetooth
-#from bluetooth_connection import bluetooth_logging_handler
+# from bluetooth_connection import bluetooth_logging_handler
 
 # Data types
 from data_handling.data_classes import Temperature
@@ -24,7 +28,7 @@ from system import system_constants
 from system.active_components import Element, RegisterFlowController
 
 # System components
-from system.sensors import TargetTemperatureSensor, ElementSensor, TemperatureSensor, W1Bus
+from system.sensors import TargetTemperatureSensor, ElementSensor, TemperatureSensor, W1Bus, TemperatureNotFound
 
 # Setup system logger
 system_logger = custom_logger.create_system_logger()
@@ -173,6 +177,19 @@ class UpdateHandler(object):
         pass
 
 
+def queue_drain(q):
+    """
+    Iterates through a queue until no items remain
+    :param q: The Queue to retrieve items from
+    :yield: Items from the queue
+    """
+    while True:
+        try:
+            yield q.get_nowait()
+        except queue.Empty:
+            break
+
+
 class System(object):
     """
     This class represents the main system.
@@ -188,14 +205,14 @@ class System(object):
         self.room_sensors = dict()
         self.room_dampers = dict()
 
-        #todo: ADD UUID HERE
+        # todo: ADD UUID HERE
         self.external_temperature_sensor = TemperatureSensor("external", None)
 
         # define ids for rooms
         room_ids = range(3)
 
         connected_uuids = W1Bus()
-        for _uuid in system_constants.room_temp_UUID_list:
+        for _uuid in system_constants.sensor_UUIDS:
             if _uuid not in connected_uuids:
                 print(f"The temperature sensor with ID: {_uuid} was unable to be located on the 1W-BUS")
 
@@ -204,7 +221,7 @@ class System(object):
             # todo: Gather target temperature
             self.room_sensors[_id] = TargetTemperatureSensor(
                 _id=_id,
-                _uuid=system_constants.room_temperature_UUIDS[_id],
+                _uuid=system_constants.sensor_UUIDS[_id],
                 target_temperature=Temperature(20.0))
 
             self.room_dampers[_id] = RegisterFlowController(
@@ -215,17 +232,96 @@ class System(object):
         self.element_sensors = {
             "prim": ElementSensor(
                 _id="prim",
-                _uuid=system_constants.element_sensor_UUIDs["prim"],
+                _uuid=system_constants.sensor_UUIDS["prim"],
                 max_temp=system_constants.element_max_temp,
                 min_temp=system_constants.element_min_temp
             ),
             "sec": ElementSensor(
                 _id="sec",
-                _uuid=system_constants.element_sensor_UUIDs["sec"],
+                _uuid=system_constants.sensor_UUIDS["sec"],
                 max_temp=system_constants.element_max_temp,
                 min_temp=system_constants.element_min_temp
-                )
+            )
         }
+
+    def get_all_sensors_iterable(self):
+        """
+        Retrieves an iterable of all temperature sensors in the system
+        """
+        ret_iterable = itertools.chain(
+            [self.external_temperature_sensor],
+            self.room_sensors,
+            self.element_sensors
+        )
+        return ret_iterable
+
+    def get_temperature_readings(self):
+        """
+        Retrieves all temperature sensor readings
+
+        :return:
+        """
+
+        # Generate a queue for putting temperature values from threads
+        temp_reading_queue = queue.Queue()
+
+        threads = []
+
+        # Instantiate temperature reading threads
+        # as the reading process can take up to a second per read
+        for temp_sensor in self.get_all_sensors_iterable():
+            temp_gather_thread = Thread(
+                target=temp_sensor.get_temperature_c_into_queue,
+                args=(temp_sensor, temp_reading_queue),
+                kwargs={}
+            )
+            threads.append(temp_gather_thread)
+            temp_gather_thread.start()
+
+        # Wait for all reads to complete
+        for t in threads:
+            t.join()
+
+        # Create a dictionary to store room temperature data
+        room_readings = {}
+
+        # Create a dictionary to store element temperature data
+        element_sensor_readings = {}
+
+        # Create a list of external temperature readings
+        external_temperature_readings = []
+
+        # Handle the queue readings
+        for sensor, reading in queue_drain(temp_reading_queue):
+            if isinstance(sensor, ElementSensor):
+
+                # Store temperature reading in the dictionary
+                element_sensor_readings[sensor.id] = reading
+
+                # Gather and check for temperatures over the element limits
+                try:
+                    sensor.check_temperature_limits(reading)
+
+                # Disables the element in an over/under temperature condition
+                except OverTemperature or UnderTemperature:
+                    self.element.enabled = False
+
+            elif isinstance(sensor, TargetTemperatureSensor):
+                # This is a case of a room temperature
+
+                room_readings[sensor.id] = reading
+
+            elif isinstance(sensor, TemperatureSensor):
+                # This will be the case for the previous 2 conditions as well,
+                # This implies that the measurement was taken from the external sensor
+
+                external_temperature_readings.append(reading)
+
+            else:
+                raise TemperatureNotFound
+
+        # Return all readings that were gathered
+        return external_temperature_readings, room_readings, element_sensor_readings
 
     def handle_cycle(self) -> None:
         """
@@ -234,35 +330,23 @@ class System(object):
         :return: None
         """
 
-        # Get external temperature
-        #TODO: get sensor id for external sensor
-        #external_temp = self.external_temperature_sensor.get_temperature()
+        # Retrieve temperature data
+        external_temperature_readings, room_readings, element_sensor_readings \
+            = self.get_temperature_readings()
 
-        # Gather and check for temperatures over the element limits
-        for es in self.element_sensors.values():
-            element_temp = es.get_temperature()
-            try:
-                es.check_temperature_limits(element_temp)
+        # Create a dictionary to store all temperature errors
+        room_error_readings = {}
 
-            # Disables the element in an over/under temperature condition
-            except OverTemperature or UnderTemperature:
-                self.element.enabled = False
-
-        # Iterate through each room and get the temperatures
-        room_readings = {}
-        for _id, sensor in self.room_sensors.items():
-            # Gets the current room temperature
-            current_room_temp = sensor.get_temperature()
-
-            # Calculates the temperature delta for the room
-            delta_temp = sensor.temperature_error(current_room_temp)
-
-            # Stores the delta temperature in a dictionary with shared sensor keys
-            room_readings[_id] = delta_temp
+        # Calculate the temperature delta for each room
+        for _id, reading in room_readings.items():
+            # Calculates the temperature delta for the room and stores the delta temperature in a dictionary
+            room_error_readings[_id] = self.room_sensors[_id].temperature_error(reading)
 
         # Calculate the system overall target vector based on a pid controller
         # todo: implement this!
-        #self.element.generate_target_vector(external_temp, room_readings)
+        # self.element.generate_target_vector(external_temp, room_readings)
+
+        # todo: modify servo values to set temperature flow states accordingly
 
     def enter_main_loop(self) -> None:
         """
@@ -313,73 +397,6 @@ class System(object):
             sleep_time = 0.0
 
         return sleep_time
-
-
-def run_system(incoming_update_queue=None):
-    """
-    This function is being replaced by the System class
-    """
-
-    # Log system startup information
-    system_logger.info("System is starting up!")
-
-    # Setup external temperature sensor
-    external_temp_sensor = TemperatureSensor("external")
-
-    # Setup room sensors
-    room_temperature_sensors = [TargetTemperatureSensor(_id, Temperature(20.0)) for _id in range(3)]
-
-    # Setup element sensors
-    primary_element_monitor = ElementSensor("prim", system_constants.element_max_temp,
-                                            system_constants.element_min_temp)
-    secondary_element_monitor = ElementSensor("sec", system_constants.element_max_temp,
-                                              system_constants.element_min_temp)
-
-    # Set up our active components
-    element = Element("elem", peltier_heating=True)
-
-    # Define room valves
-    register_valves = [RegisterFlowController(_id, "Dummy pin") for i_d in range(3)]
-
-    # Enable the main temperature control loop of the element
-    element.enabled = True
-
-    # Log our current time to get system loop operating time
-    previous_time = datetime.datetime.now()
-
-    # Enter the infinite loop!
-    while True:
-
-        if incoming_update_queue is not None:
-            pass
-
-        # Gather and check for temperatures over the element limits
-        for es in (primary_element_monitor, secondary_element_monitor):
-            element_temp = es.get_temperature()
-            try:
-                es.check_temperature_limits(element_temp)
-            except OverTemperature or UnderTemperature:
-                # Disables the element in an over/under temperature condition
-                element.enabled = False
-
-        # Iterate through each room and get the temperatures
-        room_readings = []
-        for ts in room_temperature_sensors:
-            # Gets the current room temperature
-            current_room_temp = ts.get_temperature()
-
-            # Calculates the temperature delta for the room
-            room_readings.append(ts.temperature_error(current_room_temp))
-
-        # Calculate the system overall target vector based on a pid controller
-        element.generate_target_vector(external_temp_sensor.get_temperature(), room_readings)
-
-        # Wait a period of time defined
-        sleep(system_constants.system_update_interval)
-
-        # Log a complete system loop and the time it took to complete
-        system_logger.debug(f"Main loop completed in {(datetime.datetime.now() - previous_time).total_seconds()}s")
-        previous_time = datetime.datetime.now()
 
 
 if __name__ == "__main__":

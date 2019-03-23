@@ -2,6 +2,8 @@ from data_handling.data_classes import Temperature
 from data_handling import custom_logger
 from data_handling.custom_errors import OverTemperature, UnderTemperature
 
+from queue import Queue
+
 from glob import glob
 
 # Create a logger to log general system information
@@ -19,6 +21,7 @@ class TemperatureSensor(object):
     Base class for all temperature sensors.
     Implements methods for gathering data and logging results to unique log files
     """
+
     def __init__(self, _id, _uuid):
         # Assign the sensor an ID
         self._id = _id
@@ -28,7 +31,11 @@ class TemperatureSensor(object):
         # Create a logger for the sensor
         self.logger = custom_logger.create_measurement_logger(_id)
 
-    def get_temperature(self) -> Temperature:
+    @property
+    def id(self):
+        return self._id
+
+    def get_temperature_c(self) -> Temperature:
         """
         Retrieves measurement form the 1 wire interface and returns the results in degrees celsius
         Opens the device temperature reading file and retrieves the most recent temperature reading
@@ -46,7 +53,7 @@ class TemperatureSensor(object):
             if lines[0].strip()[-3:] == 'YES':
                 break
             else:
-                raise TemperatureNotFound
+                pass
 
         # searches for "t=" in the temperature line that was found as the most recent measurement
         equals_pos = lines[1].find('t=')
@@ -60,9 +67,6 @@ class TemperatureSensor(object):
             # Converts the retrieved string to a temperature reading
             temp_c = float(temp_string) / 1000.0
 
-            # temp in ferenheight
-            # temp_f = temp_c * 9.0 / 5.0 + 32.0
-
             # Log the retrieved temperature
             self.log_temperature(temp_c)
 
@@ -72,6 +76,15 @@ class TemperatureSensor(object):
         else:
             # if "t=" was not found in the file
             raise TemperatureNotFound
+
+    def get_temperature_c_into_queue(self, _queue: Queue):
+        """
+        Adds the sensor, reading pair into a queue
+
+        :param _queue:
+        :return:
+        """
+        _queue.put((self, self.get_temperature_c()))
 
     ###################
     #  Read Methods  #
@@ -99,6 +112,17 @@ class TemperatureSensor(object):
         """
 
         self.logger.info(msg=temp_reading)
+
+    @staticmethod
+    def c_to_f(temp_c: float) -> float:
+        """
+        Returns a value of temperature fahrenheit from a given celsius value
+        :param temp_c:
+        :return:
+        """
+
+        # temp in fahrenheit
+        return temp_c * 9.0 / 5.0 + 32.0
 
 
 class TargetTemperatureSensor(TemperatureSensor):

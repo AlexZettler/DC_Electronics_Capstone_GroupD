@@ -229,11 +229,11 @@ class System(object):
         """
 
         # Get external temperature
-        external_temp = self.external_temperature_sensor.get_temperature()
+        external_temp = self.external_temperature_sensor.get_temperature_c()
 
         # Gather and check for temperatures over the element limits
         for es in self.element_sensors:
-            element_temp = es.get_temperature()
+            element_temp = es.get_temperature_c()
             try:
                 es.check_temperature_limits(element_temp)
 
@@ -245,7 +245,7 @@ class System(object):
         room_readings = {}
         for _id, sensor in self.room_sensors.items():
             # Gets the current room temperature
-            current_room_temp = sensor.get_temperature()
+            current_room_temp = sensor.get_temperature_c()
 
             # Calculates the temperature delta for the room
             delta_temp = sensor.temperature_error(current_room_temp)
@@ -348,7 +348,7 @@ def run_system(incoming_update_queue=None):
 
         # Gather and check for temperatures over the element limits
         for es in (primary_element_monitor, secondary_element_monitor):
-            element_temp = es.get_temperature()
+            element_temp = es.get_temperature_c()
             try:
                 es.check_temperature_limits(element_temp)
             except OverTemperature or UnderTemperature:
@@ -359,13 +359,13 @@ def run_system(incoming_update_queue=None):
         room_readings = []
         for ts in room_temperature_sensors:
             # Gets the current room temperature
-            current_room_temp = ts.get_temperature()
+            current_room_temp = ts.get_temperature_c()
 
             # Calculates the temperature delta for the room
             room_readings.append(ts.temperature_error(current_room_temp))
 
         # Calculate the system overall target vector based on a pid controller
-        element.generate_target_vector(external_temp_sensor.get_temperature(), room_readings)
+        element.generate_target_vector(external_temp_sensor.get_temperature_c(), room_readings)
 
         # Wait a period of time defined
         sleep(system_constants.system_update_interval)

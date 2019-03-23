@@ -22,15 +22,6 @@ GPIO.setmode(GPIO.BCM)
 
 # delta = max_cycle - min_cycle
 
-class Servo(object):
-    """
-    Represents a servo capable of rotating a variable number of degrees
-    """
-
-    pwm_limits = {
-        "high": 0.2,
-        "low": 0.4,
-    }
 
 class Servo(object):
     """
@@ -42,6 +33,12 @@ class Servo(object):
 
     # In degrees per second
     angular_velocity = 90.0
+
+    # Represents tested limits of each of the servos
+    pwm_limits = {
+        "high": 0.2,
+        "low": 0.4,
+    }
 
     def __init__(self, pin: int, min_duty: float, max_duty: float):
         # Define the BCM pin to work with
