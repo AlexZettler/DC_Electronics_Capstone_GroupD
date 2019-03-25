@@ -32,7 +32,7 @@ class TemperatureSensor(object):
         self.logger = custom_logger.create_measurement_logger(_id)
 
     @property
-    def id(self):
+    def get_id(self):
         return self._id
 
     def get_temperature_c(self) -> Temperature:

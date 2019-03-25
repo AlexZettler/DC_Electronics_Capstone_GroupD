@@ -161,4 +161,11 @@ class Servo(object):
             time.sleep(sleep_time)
 
 
+if __name__ == '__main__':
+    s = Servo(18, 0.45/20, 2.5/20)
+    s.rotate_to_angle(90.0)
+    time.sleep(1.0)
+    s.rotate_to_angle(0.0)
+
+
 GPIO.cleanup()

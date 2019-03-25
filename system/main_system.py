@@ -296,7 +296,7 @@ class System(object):
             if isinstance(sensor, ElementSensor):
 
                 # Store temperature reading in the dictionary
-                element_sensor_readings[sensor.id] = reading
+                element_sensor_readings[sensor.get_id] = reading
 
                 # Gather and check for temperatures over the element limits
                 try:
@@ -309,7 +309,7 @@ class System(object):
             elif isinstance(sensor, TargetTemperatureSensor):
                 # This is a case of a room temperature
 
-                room_readings[sensor.id] = reading
+                room_readings[sensor.get_id] = reading
 
             elif isinstance(sensor, TemperatureSensor):
                 # This will be the case for the previous 2 conditions as well,
@@ -347,6 +347,44 @@ class System(object):
         # self.element.generate_target_vector(external_temp, room_readings)
 
         # todo: modify servo values to set temperature flow states accordingly
+
+        for servo in self.room_dampers.items():
+            pass
+
+    def decide_target_direction(self, error_readings):
+        """
+        Decide on a target direction based on error readings
+        Sets the system into the given target direction
+
+        :param error_readings:
+        :return:
+        """
+        # Define a error vector in out target temperature direction
+        dir_error_total = 0.0
+
+        # Now we need to decide if our current temperature target has been reached in the current temperature mode
+        if self.element.heating:
+
+            # Only cumulalate reading in our target direction
+            for e in error_readings:
+                if e > 0.0:
+                    dir_error_total += e
+
+        else:
+            for e in error_readings:
+                if e < 0.0:
+                    dir_error_total += e
+
+        # Catch temperature in direction satisfied
+        if dir_error_total == 0.0:
+            # Switch heating/cooling direction
+            self.element.heating = self.element.cooling
+
+            # self.element.enabled = True
+
+
+
+
 
     def enter_main_loop(self) -> None:
         """
