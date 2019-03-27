@@ -36,8 +36,8 @@ class Servo(object):
 
     # Represents tested limits of each of the servos
     pwm_limits = {
-        "high": 0.2,
-        "low": 0.4,
+        "high": 1.0,
+        "low": 0.0,
     }
 
     def __init__(self, pin: int, min_duty: float, max_duty: float):
@@ -58,6 +58,15 @@ class Servo(object):
 
         # Start the PWM controller
         self.start()
+
+    @property
+    def min_duty(self):
+        return self.line.y1
+
+    @property
+    def max_duty(self):
+        return self.line.y2
+
 
     def start(self):
         self.pwm.start(0)
@@ -81,8 +90,8 @@ class Servo(object):
         :param angle: The angle to retrieve the PWM signal for
         :return: The pwm duty cycle at the given angle
         """
-        if not self.verify_angle(angle):
-            raise ValueError(f"{angle} is outside of PWM controllers limits.")
+        #if not self.verify_angle(angle):
+        #    raise ValueError(f"{angle} is outside of PWM controllers limits.")
         return self.line[angle]
 
     def verify_pwm_within_limits(self, pwm: float) -> bool:
@@ -155,6 +164,7 @@ class Servo(object):
 
         # Iterate through each
         for sin_resp in iter(delta * math.sin(x / resolution) for x in response):
+            print(sin_resp)
             self.pwm.ChangeDutyCycle(self.min_duty + sin_resp)
 
             # Wait whatever time dictated by resolution
@@ -168,4 +178,3 @@ if __name__ == '__main__':
     s.rotate_to_angle(0.0)
 
 
-GPIO.cleanup()

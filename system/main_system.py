@@ -206,7 +206,7 @@ class System(object):
         self.room_dampers = dict()
 
         # todo: ADD UUID HERE
-        self.external_temperature_sensor = TemperatureSensor("external", None)
+        self.external_temperature_sensor = TemperatureSensor("external", system_constants.external_sensor_UUID["external"])
 
         # define ids for rooms
         room_ids = range(3)
@@ -250,8 +250,8 @@ class System(object):
         """
         ret_iterable = itertools.chain(
             [self.external_temperature_sensor],
-            self.room_sensors,
-            self.element_sensors
+            self.room_sensors.values(),
+            self.element_sensors.values()
         )
         return ret_iterable
 
@@ -272,7 +272,7 @@ class System(object):
         for temp_sensor in self.get_all_sensors_iterable():
             temp_gather_thread = Thread(
                 target=temp_sensor.get_temperature_c_into_queue,
-                args=(temp_sensor, temp_reading_queue),
+                args=(temp_reading_queue,),
                 kwargs={}
             )
             threads.append(temp_gather_thread)

@@ -217,11 +217,11 @@ class Servo(object):
 
     # Represents tested limits of each of the servos
     pwm_limits = {
-        "high": 0.2,
-        "low": 0.4,
+        "high": 0.45/20*100,
+        "low": 2.5/20*100,
     }
 
-    def __init__(self, pin: int, min_duty: float, max_duty: float):
+    def __init__(self, pin: int, min_duty_percent: float, max_duty_percent: float):
         # Define the BCM pin to work with
         self.pin = pin
 
@@ -229,8 +229,8 @@ class Servo(object):
         self.line = li.Line(
             x1=0.0,
             x2=90.0,
-            y1=min_duty,
-            y2=max_duty
+            y1=min_duty_percent,
+            y2=max_duty_percent
         )
 
         # Setup PWM controller
