@@ -211,7 +211,7 @@ class Servo(object):
     """
 
     # The frequency of the PWM signal
-    pwm_freq = None
+    pwm_freq = 50.0
 
     # In degrees per second
     angular_velocity = None
@@ -254,13 +254,13 @@ class Servo(object):
         return self.line.y2
 
     def start(self):
-        self.pwm.start(0)
+        self.pwm.start(self.min_duty)
 
     def stop(self):
         self.pwm.stop()
 
-    def __del__(self):
-        GPIO.cleanup(self._pin)
+    #def __del__(self):
+    #    GPIO.cleanup(self.pin)
 
     def rotate_to_angle(self, angle: float) -> None:
         """
@@ -376,15 +376,6 @@ class RegisterFlowController(Servo):
 
         self.logger = custom_logger.create_output_logger(_id)
 
-        self.last_angle = 0.0
-
-        # Define the raspberry Pi output pin and start the PWM controller
-        GPIO.setup(self._pin, GPIO.OUT)
-        self.pwm_cont = GPIO.PWM(self._pin, self.pwm_freq)
-
-        # start pwm controller with 0% duty cycle
-        self.pwm_cont.start(0)
-        self.rotate_to_angle(90.0)
 
     def rotate_to_angle(self, angle: float) -> None:
         """

@@ -230,8 +230,8 @@ class System(object):
             self.room_dampers[_id] = RegisterFlowController(
                 _id=_id,
                 pin=system_constants.room_servo_pins[_id],
-                min_duty=5.0,
-                max_duty=15.0,
+                min_duty=15.0,
+                max_duty=25.0,
             )
 
         # Setup element sensors

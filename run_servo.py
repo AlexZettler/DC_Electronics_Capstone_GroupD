@@ -2,8 +2,10 @@ import time
 import RPi.GPIO as GPIO
 from system.active_components import Servo
 
+GPIO.setmode(GPIO.BCM)
+
 if __name__ == '__main__':
-    s = Servo(18, 0.5 / 20 * 100, 1.5 / 20 * 100)
+    s = Servo(13, 0.5 / 20 * 100, 1.5 / 20 * 100)
     angle45 = 45.0
     angle90 = 90.0
     angle00 = 0.0
