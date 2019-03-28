@@ -205,8 +205,11 @@ class System(object):
         self.room_sensors = dict()
         self.room_dampers = dict()
 
-        # todo: ADD UUID HERE
-        self.external_temperature_sensor = TemperatureSensor("external", system_constants.external_sensor_UUID["external"])
+        self.external_temperature_sensor = TemperatureSensor(
+            "external", system_constants.external_sensor_UUID["external"])
+
+        self.temperature_output_sensor = TemperatureSensor(
+            "out", system_constants.temperature_output_sensor_UUID["out"])
 
         # define ids for rooms
         room_ids = range(3)
@@ -214,7 +217,7 @@ class System(object):
         connected_uuids = W1Bus()
         for _uuid in system_constants.sensor_UUIDS:
             if _uuid not in connected_uuids:
-                print(f"The temperature sensor with ID: {_uuid} was unable to be located on the 1W-BUS")
+                system_logger.warning(f"The temperature sensor with ID: {_uuid} was unable to be located on the 1W-BUS")
 
         # Setup dampers and sensors for each room
         for _id in room_ids:
@@ -226,7 +229,10 @@ class System(object):
 
             self.room_dampers[_id] = RegisterFlowController(
                 _id=_id,
-                pin=system_constants.room_servo_pins[_id])
+                pin=system_constants.room_servo_pins[_id],
+                min_duty=5.0,
+                max_duty=15.0,
+            )
 
         # Setup element sensors
         self.element_sensors = {
@@ -250,6 +256,7 @@ class System(object):
         """
         ret_iterable = itertools.chain(
             [self.external_temperature_sensor],
+
             self.room_sensors.values(),
             self.element_sensors.values()
         )
@@ -291,7 +298,7 @@ class System(object):
         # Create a list of external temperature readings
         external_temperature_readings = []
 
-        # Handle the queue readings
+        # Handle the queue temperature readings
         for sensor, reading in queue_drain(temp_reading_queue):
             if isinstance(sensor, ElementSensor):
 
@@ -323,6 +330,23 @@ class System(object):
         # Return all readings that were gathered
         return external_temperature_readings, room_readings, element_sensor_readings
 
+    def get_room_temperature_errors(self, readings: dict) -> dict:
+        """
+
+        :param readings:
+        :return:
+        """
+
+        # Define the dict to return
+        room_error_readings = {}
+
+        # Calculate the temperature delta for each room
+        for _id, reading in readings.items():
+            # Calculates the temperature delta for the room and stores the delta temperature in a dictionary
+            room_error_readings[_id] = self.room_sensors[_id].temperature_error(reading)
+
+        return room_error_readings
+
     def handle_cycle(self) -> None:
         """
         Method for running a system cycle
@@ -331,25 +355,34 @@ class System(object):
         """
 
         # Retrieve temperature data
-        external_temperature_readings, room_readings, element_sensor_readings \
-            = self.get_temperature_readings()
+        external_temperature_readings, room_readings, element_sensor_readings = self.get_temperature_readings()
 
         # Create a dictionary to store all temperature errors
-        room_error_readings = {}
+        room_error_readings = self.get_room_temperature_errors(room_readings)
 
-        # Calculate the temperature delta for each room
-        for _id, reading in room_readings.items():
-            # Calculates the temperature delta for the room and stores the delta temperature in a dictionary
-            room_error_readings[_id] = self.room_sensors[_id].temperature_error(reading)
+        # Iterate through each room
+        for _id, servo in self.room_dampers.items():
 
-        # Calculate the system overall target vector based on a pid controller
-        # todo: implement this!
-        # self.element.generate_target_vector(external_temp, room_readings)
+            if self.element.enabled:
 
-        # todo: modify servo values to set temperature flow states accordingly
+                # If system in heating mode and the room temperature is still below the target
+                if self.element.heating and room_error_readings[_id] <= 0.0:
+                    servo.rotate_to_angle(90.0)
 
-        for servo in self.room_dampers.items():
-            pass
+                # If system in cooling mode and the room temperature is still above the target
+                elif self.element.cooling and room_error_readings[_id] >= 0.0:
+                    servo.rotate_to_angle(90.0)
+
+                # The case if the temperature target has not been reached given the current system state
+                else:
+                    servo.rotate_to_angle(0.0)
+
+            # Dampers should be closed when the system is off
+            else:
+                servo.rotate_to_angle(0.0)
+
+        # Decide if the system should change temperature modes
+        self.decide_target_direction(room_error_readings)
 
     def decide_target_direction(self, error_readings):
         """
@@ -365,7 +398,7 @@ class System(object):
         # Now we need to decide if our current temperature target has been reached in the current temperature mode
         if self.element.heating:
 
-            # Only cumulalate reading in our target direction
+            # Only cumulative reading in our target direction
             for e in error_readings:
                 if e > 0.0:
                     dir_error_total += e
@@ -381,10 +414,6 @@ class System(object):
             self.element.heating = self.element.cooling
 
             # self.element.enabled = True
-
-
-
-
 
     def enter_main_loop(self) -> None:
         """

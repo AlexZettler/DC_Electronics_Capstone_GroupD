@@ -40,11 +40,15 @@ element_sensor_UUIDs = {
 # Define the external temperature around the system
 external_sensor_UUID = {"external": "00000b0bdbe0"}
 
+# Define the temperature output of the system
+temperature_output_sensor_UUID = {"out": None}
+
 # Create a complete dict of k:UUID sensor pairs
 sensor_UUIDS = {
     **room_temperature_UUIDS,
     **element_sensor_UUIDs,
-    **external_sensor_UUID
+    **external_sensor_UUID,
+    **temperature_output_sensor_UUID
 }
 
 #####################

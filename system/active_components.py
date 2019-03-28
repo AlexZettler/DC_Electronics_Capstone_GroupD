@@ -7,6 +7,7 @@ import RPi.GPIO as GPIO
 from data_handling import custom_logger
 import time
 from system.system_constants import heating_pin, cooling_pin
+import data_handling.linear_interpolation as li
 
 # Create a logger for general system information
 system_logger = custom_logger.create_system_logger()
@@ -210,41 +211,56 @@ class Servo(object):
     """
 
     # The frequency of the PWM signal
-    pwm_freq = 50.0
+    pwm_freq = None
 
     # In degrees per second
-    angular_velocity = 90.0
+    angular_velocity = None
 
     # Represents tested limits of each of the servos
     pwm_limits = {
-        "high": 0.45/20*100,
-        "low": 2.5/20*100,
+        "high": 2.50,
+        "low": 0.45,
     }
 
-    def __init__(self, pin: int, min_duty_percent: float, max_duty_percent: float):
+    def __init__(self, pin: int, min_duty: float, max_duty: float):
         # Define the BCM pin to work with
-        self.pin = pin
+        self._pin = pin
 
         # Create the angle duty cycle response line
         self.line = li.Line(
             x1=0.0,
             x2=90.0,
-            y1=min_duty_percent,
-            y2=max_duty_percent
+            y1=min_duty,
+            y2=max_duty
         )
 
         # Setup PWM controller
-        GPIO.setup(self.pin, GPIO.OUT)
-        self.pwm = GPIO.PWM(self.pin, self.pwm_freq)
+        GPIO.setup(self._pin, GPIO.OUT)
+        self.pwm = GPIO.PWM(self._pin, self.pwm_freq)
 
         # Start the PWM controller
         self.start()
+
+    @property
+    def pin(self):
+        return self._pin
+
+    @property
+    def min_duty(self):
+        return self.line.y1
+
+    @property
+    def max_duty(self):
+        return self.line.y2
 
     def start(self):
         self.pwm.start(0)
 
     def stop(self):
         self.pwm.stop()
+
+    def __del__(self):
+        GPIO.cleanup(self._pin)
 
     def rotate_to_angle(self, angle: float) -> None:
         """
@@ -262,8 +278,8 @@ class Servo(object):
         :param angle: The angle to retrieve the PWM signal for
         :return: The pwm duty cycle at the given angle
         """
-        if not self.verify_angle(angle):
-            raise ValueError(f"{angle} is outside of PWM controllers limits.")
+        # if not self.verify_angle(angle):
+        #    raise ValueError(f"{angle} is outside of PWM controllers limits.")
         return self.line[angle]
 
     def verify_pwm_within_limits(self, pwm: float) -> bool:
@@ -336,70 +352,46 @@ class Servo(object):
 
         # Iterate through each
         for sin_resp in iter(delta * math.sin(x / resolution) for x in response):
+            print(sin_resp)
             self.pwm.ChangeDutyCycle(self.min_duty + sin_resp)
 
             # Wait whatever time dictated by resolution
             time.sleep(sleep_time)
 
 
-GPIO.cleanup()
-
-
-
-
-class RegisterFlowController(object):
+class RegisterFlowController(Servo):
     # Todo: merge servo test into this class, as it is a more robust solution
 
     # Constant PWM signal frequency
-    freq = 50.0
+    pwm_freq = 50.0
 
-    # Constant representing servo maximum turn rate
-    turn_rate = 0.5
+    # Constant representing servo maximum turn rate in deg/sec
+    angular_velocity = 360.0
 
     # https://circuitdigest.com/microcontroller-projects/raspberry-pi-pwm-tutorial
 
-    def __init__(self, _id, pin):
-        # Sets the
-        self._room_id = _id
-        self._pin = pin
+    def __init__(self, _id, pin, min_duty, max_duty):
+        # Creates the parent servo object
+        super().__init__(pin=pin, min_duty=min_duty, max_duty=max_duty)
 
         self.logger = custom_logger.create_output_logger(_id)
 
-        self.last_pos = 0.0
+        self.last_angle = 0.0
 
-        print(self._pin)
+        # Define the raspberry Pi output pin and start the PWM controller
         GPIO.setup(self._pin, GPIO.OUT)
-        self.pwm_cont = GPIO.PWM(self._pin, self.freq)
+        self.pwm_cont = GPIO.PWM(self._pin, self.pwm_freq)
 
         # start pwm controller with 0% duty cycle
         self.pwm_cont.start(0)
-        self.set_to_pos(90.0)
+        self.rotate_to_angle(90.0)
 
-    def set_to_pos(self, angle: float):
-        # angle should be 0-180 degrees
-        # Angle will only ever be set between 0 and 90 degrees in our case
-        # 1/20 -> 1/10
+    def rotate_to_angle(self, angle: float) -> None:
+        """
+        Rotates the servo to a given degree
 
-        # Ensure that the angle is within the device limits
-        if (angle >= 0.0) and (angle <= 180.0):
-
-            # Calculate angle delta
-            angle_delta = self.last_pos - angle
-
-            # Verify that we are actually moving the servo motor
-            if angle_delta != 0.0:
-                # Generate a signal between (1 and 2)/20 of it's duty cycle
-                duty_cycle = (1 + (angle / 180)) / 20
-
-                # Change the PWM output to the calculated value
-                self.pwm_cont.ChangeDutyCycle(duty_cycle)
-
-                # Log the output
-                self.logger.info(f"{angle}, {angle_delta}")
-
-                # Store last position set so that the device doesn't need to rewrite an unchanged position
-                self.last_pos = angle
-
-        else:
-            system_logger.debug(
-                f"Device with id {id} tried to set it's position to '{angle}' which is outside of it's operating range")
+        :param angle: The angle to rotate the servo to
+        :return: None
+        """
+        self.logger.info(f"{angle}")
+        super().rotate_to_angle(angle)
