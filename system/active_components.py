@@ -138,7 +138,6 @@ class Element(PID):
     @heating.setter
     def heating(self, val: bool):
         self._heating = val
-        self._cooling = not val
 
     @property
     def cooling(self) -> bool:
@@ -146,7 +145,6 @@ class Element(PID):
 
     @cooling.setter
     def cooling(self, val: bool):
-        self._cooling = val
         self._heating = not val
 
     @property
@@ -195,16 +193,22 @@ class Element(PID):
         # out_vector = self.update_with_values()
 
         # todo: implement PID controller
-        out_vector = sum(sensor_deltas.values())
+        # out_vector = sum(sensor_deltas.values())
 
-        if out_vector > 0.0:
-            self.heating = True
+        all_rooms_satisfied = True
+        for td in sensor_deltas.values():
+            if self.heating:
+                if td < 0.0:
+                    all_rooms_satisfied = False
+                    break
 
-        if out_vector < 0.0:
-            self.cooling = True
+            else:
+                if td > 0.0:
+                    all_rooms_satisfied = False
+                    break
 
-        if out_vector == 0.0:
-            pass
+        if not all_rooms_satisfied:
+            self.heating = not self.heating
 
 
 class Servo(object):
@@ -261,7 +265,7 @@ class Servo(object):
     def stop(self):
         self.pwm.stop()
 
-    #def __del__(self):
+    # def __del__(self):
     #    GPIO.cleanup(self.pin)
 
     def rotate_to_angle(self, angle: float) -> None:
@@ -377,7 +381,6 @@ class RegisterFlowController(Servo):
         super().__init__(pin=pin, min_duty=min_duty, max_duty=max_duty)
 
         self.logger = custom_logger.create_output_logger(_id)
-
 
     def rotate_to_angle(self, angle: float) -> None:
         """
