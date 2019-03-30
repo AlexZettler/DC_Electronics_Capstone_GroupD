@@ -201,7 +201,10 @@ class System(object):
 
         self.element = Element("element", peltier_heating=True)
         self.element.enabled = True
+<<<<<<< HEAD
         self.element.apply_state()
+=======
+>>>>>>> dev
 
         # Define sensor and damper management hash tables
         self.room_sensors = dict()
