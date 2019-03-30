@@ -200,6 +200,8 @@ class System(object):
         self.update_interval = system_constants.system_update_interval
 
         self.element = Element("element", peltier_heating=True)
+        self.element.enabled = True
+        self.element.apply_state()
 
         # Define sensor and damper management hash tables
         self.room_sensors = dict()
@@ -383,7 +385,7 @@ class System(object):
 
             # Dampers should be closed when the system is off
             else:
-                servo.rotate_to_angle(0.0)
+                servo.rotate_to_angle(90.0)
 
         # Decide if the system should change temperature modes
         self.decide_target_direction(room_error_readings)
