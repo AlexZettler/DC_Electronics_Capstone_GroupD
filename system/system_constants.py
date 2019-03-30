@@ -28,7 +28,7 @@ heating_pin, cooling_pin = 23, 24
 # Define room pins from ID: pin_name pair
 room_servo_pins = {_id: pin_name for _id, pin_name in enumerate(iterable=(13, 19, 26))}
 
-room_temp_targets = [20, 23, 25]
+room_temp_targets = [20, 24, 27]
 
 # Define room sensors from ID: UUID pair
 room_temp_UUID_list = ["00000b0bd120", "00000b0be1c7", "00000b0bf3f0"]
