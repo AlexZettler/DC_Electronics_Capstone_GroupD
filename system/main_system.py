@@ -366,12 +366,11 @@ class System(object):
         room_error_readings = self.get_room_temperature_errors(room_readings)
 
         print(room_error_readings)
+        print(f"enabled: {self.element.enabled}\nheating: {self.element.heating}")
 
         # Iterate through each room
         for _id, servo in self.room_dampers.items():
 
-            print(f"enabled: {self.element.enabled}")
-            print(f"heating: {self.element.heating}")
             print(f"room temperature delta: {room_error_readings[_id].celsius}")
 
             if self.element.enabled:
