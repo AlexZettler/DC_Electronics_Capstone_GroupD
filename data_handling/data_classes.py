@@ -3,7 +3,7 @@ import json
 
 class Temperature(object):
     def __init__(self, reading: float):
-        self._reading = reading
+        self._reading = float(reading)
 
     def __str__(self):
         return f"{self.celsius}C"
@@ -11,18 +11,29 @@ class Temperature(object):
     def __repr__(self):
         return f"Temperature: {str(self)}"
 
+    def __float__(self):
+        return self.celsius
+
     def __add__(self, other):
-        return Temperature(self.celsius - other.celsius)
+        return Temperature(float(self) + float(other))
+    
+    def __iadd__(self, other):
+        self._reading += float(other) 
+        return self
 
     def __sub__(self, other):
-        return Temperature(self.celsius - other.celsius)
+        return Temperature(float(self) - float(other))
+
+    def __isub__(self, other):
+        self._reading -= float(other) 
+        return self
 
     def __gt__(self, other):
-        return self.celsius > other.celsius
+        return float(self) > float(other)
 
     def __lt__(self, other):
-        return self.celsius < other.celsius
-
+        return float(self) < float(other)
+ 
     @property
     def celsius(self)->float:
         return self._reading

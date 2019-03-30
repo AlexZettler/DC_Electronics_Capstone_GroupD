@@ -230,6 +230,7 @@ class System(object):
 
         # Setup dampers and sensors for each room
         for _id in room_ids:
+            
             # todo: Gather target temperature
             self.room_sensors[_id] = TargetTemperatureSensor(
                 _id=_id,
@@ -238,12 +239,15 @@ class System(object):
 
             system_logger.info(f"Room {_id} target temp is: {self.room_sensors[_id].target_temp}")
 
+            # Gather calibration data from constants file
+            duty_deg_0, duty_deg_90, = system_constants.servo_duty_calibrations[_id]
+
             # Define the room dampers at the corresponding pin and min/max duty
             self.room_dampers[_id] = RegisterFlowController(
                 _id=_id,
                 pin=system_constants.room_servo_pins[_id],
-                min_duty=15.0,
-                max_duty=25.0,
+                duty_at_deg0=duty_deg_0,
+                duty_at_deg90=duty_deg_90,
             )
 
         # Setup element sensors
@@ -375,7 +379,7 @@ class System(object):
 
         # Debugging code for now. todo: remove this for final testing
         print(room_error_readings)
-        print(f"enabled: {self.element.enabled}\nheating: {self.element.heating}")
+        print(f"enabled: {self.element.enabled}\nheating: {self.element.heating}\ncooling: {self.element.cooling}")
 
         # Enable all servos for a period of time
         self.servo_enabler.time_enable(0.5)
@@ -391,7 +395,7 @@ class System(object):
 
                 # If system in heating mode and the room temperature is still below the target
                 if self.element.heating and (room_error_readings[_id].celsius >= 0.0):
-                    print("System not heating room")
+                    print(f"System not heating room {_id}")
                     servo.rotate_to_angle(90.0)
 
                 # If system in cooling mode and the room temperature is still above the target
@@ -427,12 +431,12 @@ class System(object):
             # Only cumulative readings in the target direction
             for e in error_readings:
                 if e < 0.0:
-                    dir_error_total += e
+                    dir_error_total += float(e)
 
         else:
             for e in error_readings:
                 if e > 0.0:
-                    dir_error_total += e
+                    dir_error_total += float(e)
 
         # Catch temperature in direction satisfied
         if dir_error_total == 0.0:

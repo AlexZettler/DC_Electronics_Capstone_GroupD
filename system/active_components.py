@@ -29,7 +29,7 @@ class PID(OutputController):
     """
     A class representing a PID interface for a device
     """
-
+    
     def __init__(self, _room_id, target, p, i, d, b):
         # Sets output id
         super().__init__(_room_id)
@@ -236,11 +236,11 @@ class Servo(object):
 
     # Represents tested limits of each of the servos
     pwm_limits = {
-        "high": 2.50,
-        "low": 0.45,
+        "high": 25.0,
+        "low": 4.5,
     }
 
-    def __init__(self, pin: int, min_duty: float, max_duty: float):
+    def __init__(self, pin: int, duty_at_deg0: float, duty_at_deg90: float):
         # Define the BCM pin to work with
         self._pin = pin
 
@@ -248,8 +248,8 @@ class Servo(object):
         self.line = li.Line(
             x1=0.0,
             x2=90.0,
-            y1=max_duty,
-            y2=min_duty
+            y1=duty_at_deg0,
+            y2=duty_at_deg90
         )
 
         # Setup PWM controller
@@ -312,10 +312,10 @@ class Servo(object):
         return result
 
     def apply_duty(self, duty: float):
-        if self.verify_pwm_within_limits(duty):
-            self.pwm.ChangeDutyCycle(duty)
-        else:
-            print(f"{duty} is an invalid duty cycle!")
+        #if self.verify_pwm_within_limits(duty):
+        self.pwm.ChangeDutyCycle(duty)
+        #else:
+            #print(f"{duty} is an invalid duty cycle!")
 
     def get_time_to_adjust(self, current_angle: float, target_angle: float):
         """
@@ -388,9 +388,11 @@ class RegisterFlowController(Servo):
 
     # https://circuitdigest.com/microcontroller-projects/raspberry-pi-pwm-tutorial
 
-    def __init__(self, _id, pin, min_duty, max_duty):
+    def __init__(self, _id, pin, duty_at_deg0: float, duty_at_deg90: float):
         # Creates the parent servo object
-        super().__init__(pin=pin, min_duty=min_duty, max_duty=max_duty)
+        super().__init__(pin=pin,
+                         duty_at_deg0=duty_at_deg0,
+                         duty_at_deg90=duty_at_deg90)
 
         self.logger = custom_logger.create_output_logger(_id)
 

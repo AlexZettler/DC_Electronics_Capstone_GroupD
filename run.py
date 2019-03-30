@@ -6,7 +6,7 @@ if __name__ == "__main__":
     sl = create_system_logger()
 
     # Setup the system
-    s = System()
+    s = System(default_enabled=True)
 
     # Accept keyboard interrupts
     try:

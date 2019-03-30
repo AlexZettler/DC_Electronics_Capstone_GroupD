@@ -29,13 +29,15 @@ system_update_interval = 5.0
 heating_pin, cooling_pin = 23, 24
 
 # Define room pins from ID: pin_name pair
-room_servo_pins = {_id: pin_name for _id, pin_name in enumerate(iterable=(13, 19, 26))}
+room_servo_pins = {
+    _id: pin_name for _id, pin_name in enumerate(iterable=(13, 19, 26))
+    }
 
 # Define the pin to control servos
-servo_enable_pin = None
+servo_enable_pin = 5
 
 # Define the pin to control fans
-fan_enable_pin = None
+fan_enable_pin = 6
 
 # Define room sensors from ID: UUID pair
 room_temp_UUID_list = ["00000b0bd120", "00000b0be1c7", "00000b0bf3f0"]
@@ -59,6 +61,19 @@ sensor_UUIDS = {
     **external_sensor_UUID,
     **temperature_output_sensor_UUID
 }
+
+
+######################
+# Calibration values #
+######################
+
+servo_duty_calibrations = {
+    0:(2.611111111111, 7.324691358024467),
+    1:(3.1041014987555555, 7.7345679),
+    2:(2.713580236, 7.2973662530666665),
+    
+    }
+
 
 #####################
 # Logging constants #
