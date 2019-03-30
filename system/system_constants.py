@@ -11,6 +11,9 @@ from data_handling.data_classes import Temperature
 element_max_temp = Temperature(65.0)
 element_min_temp = Temperature(-20.0)
 
+# Define room temperature targets
+room_temp_targets = [20, 24, 27]
+
 ##################
 # Time constants #
 ##################
@@ -28,7 +31,11 @@ heating_pin, cooling_pin = 23, 24
 # Define room pins from ID: pin_name pair
 room_servo_pins = {_id: pin_name for _id, pin_name in enumerate(iterable=(13, 19, 26))}
 
-room_temp_targets = [20, 24, 27]
+# Define the pin to control servos
+servo_enable_pin = None
+
+# Define the pin to control fans
+fan_enable_pin = None
 
 # Define room sensors from ID: UUID pair
 room_temp_UUID_list = ["00000b0bd120", "00000b0be1c7", "00000b0bf3f0"]

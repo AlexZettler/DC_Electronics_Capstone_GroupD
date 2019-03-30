@@ -16,6 +16,7 @@ system_logger = custom_logger.create_system_logger()
 
 # Set Raspberry Pi pinout mode
 GPIO.setmode(GPIO.BCM)
+from threading import Thread
 
 
 class OutputController(object):
@@ -197,19 +198,29 @@ class Element(PID):
 
         all_rooms_satisfied = True
         for td in sensor_deltas.values():
+
+            # If any rooms are below the target temperature when they are in heating mode
             if self.heating:
                 if td < 0.0:
+                    # Switch the default condition and stop iterating
                     all_rooms_satisfied = False
-
                     break
 
+            # If any rooms are above the target temperature when they are in cooling mode
             else:
                 if td > 0.0:
+                    # Switch the default condition and stop iterating
                     all_rooms_satisfied = False
                     break
 
-        if not all_rooms_satisfied:
-            self.heating = not self.heating
+        if all_rooms_satisfied:
+            new_mode_name = {
+                True: "heating",
+                False: "cooling"
+            }[not self.heating]
+
+            system_logger.info(f"All rooms have reached their target temperature, switching to {new_mode_name} mode")
+            self.heating = self.cooling
 
 
 class Servo(object):
@@ -392,3 +403,45 @@ class RegisterFlowController(Servo):
         """
         self.logger.info(f"{angle}")
         super().rotate_to_angle(angle)
+
+
+class DeviceEnabler(object):
+    """
+    A device responsible for handling device control
+    """
+
+    def __init__(self, pin):
+        self.pin = pin
+
+        GPIO.setup(self.pin, GPIO.OUT)
+        GPIO.output(self.pin, False)
+
+    def enable(self):
+        GPIO.output(self.pin, True)
+
+    def disable(self):
+        GPIO.output(self.pin, False)
+
+    def time_enable(self, _time: float):
+        def thread_action(obj: DeviceEnabler):
+            obj.enable()
+            time.sleep(_time)
+            obj.disable()
+
+        servo_enable_thread = Thread(
+            target=thread_action,
+            args=(self,)
+        )
+        servo_enable_thread.start()
+
+    def time_disable(self, _time: float):
+        def thread_action(obj: DeviceEnabler):
+            obj.disable()
+            time.sleep(_time)
+            obj.enable()
+
+        servo_enable_thread = Thread(
+            target=thread_action,
+            args=(self,)
+        )
+        servo_enable_thread.start()

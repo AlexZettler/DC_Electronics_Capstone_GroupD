@@ -25,7 +25,7 @@ from data_handling.custom_errors import OverTemperature, UnderTemperature
 # Data types
 from data_handling.data_classes import Temperature
 from system import system_constants
-from system.active_components import Element, RegisterFlowController
+from system.active_components import Element, RegisterFlowController, DeviceEnabler
 
 # System components
 from system.sensors import TargetTemperatureSensor, ElementSensor, TemperatureSensor, W1Bus, TemperatureNotFound
@@ -196,14 +196,18 @@ class System(object):
     It is used for setting up the system, running cycles, and monitoring performance.
     """
 
-    def __init__(self):
+    def __init__(self, default_enabled: bool):
+        # Retrieve target update time from system constants
         self.update_interval = system_constants.system_update_interval
 
+        # Define the element and enable it
         self.element = Element("element", peltier_heating=True)
-        self.element.enabled = True
-        self.element.apply_state()
 
-        # Define sensor and damper management hash tables
+        if default_enabled:
+            self.element.enabled = True
+            self.element.apply_state()
+
+        # Define sensor and damper management dictionaries
         self.room_sensors = dict()
         self.room_dampers = dict()
 
@@ -216,10 +220,13 @@ class System(object):
         # define ids for rooms
         room_ids = range(3)
 
+        # Verify that all temperature sensors are connected to the bus
         connected_uuids = W1Bus()
         for _uuid in system_constants.sensor_UUIDS:
             if _uuid not in connected_uuids:
                 system_logger.warning(f"The temperature sensor with ID: {_uuid} was unable to be located on the 1W-BUS")
+
+        self.servo_enabler = DeviceEnabler(system_constants.servo_enable_pin)
 
         # Setup dampers and sensors for each room
         for _id in room_ids:
@@ -231,7 +238,7 @@ class System(object):
 
             system_logger.info(f"Room {_id} target temp is: {self.room_sensors[_id].target_temp}")
 
-            # todo:make this more sensical
+            # Define the room dampers at the corresponding pin and min/max duty
             self.room_dampers[_id] = RegisterFlowController(
                 _id=_id,
                 pin=system_constants.room_servo_pins[_id],
@@ -337,9 +344,10 @@ class System(object):
 
     def get_room_temperature_errors(self, readings: dict) -> dict:
         """
+        Get a dictionary of the error values of sensors from a dictionary of readings
 
-        :param readings:
-        :return:
+        :param readings: The list of readings to retrieve the errors from
+        :return: A dictionary containing the {_id:error in deg C}
         """
 
         # Define the dict to return
@@ -365,14 +373,20 @@ class System(object):
         # Create a dictionary to store all temperature errors
         room_error_readings = self.get_room_temperature_errors(room_readings)
 
+        # Debugging code for now. todo: remove this for final testing
         print(room_error_readings)
         print(f"enabled: {self.element.enabled}\nheating: {self.element.heating}")
+
+        # Enable all servos for a period of time
+        self.servo_enabler.time_enable(0.5)
 
         # Iterate through each room
         for _id, servo in self.room_dampers.items():
 
+            # Debugging code for now. todo: remove this for final testing
             print(f"room temperature delta: {room_error_readings[_id].celsius}")
 
+            # If the system is currently heating/cooling
             if self.element.enabled:
 
                 # If system in heating mode and the room temperature is still below the target
@@ -394,15 +408,15 @@ class System(object):
                 servo.rotate_to_angle(90.0)
 
         # Decide if the system should change temperature modes
-        self.decide_target_direction(room_error_readings)
+        self.decide_target_direction(room_error_readings.values())
 
     def decide_target_direction(self, error_readings):
         """
         Decide on a target direction based on error readings
         Sets the system into the given target direction
 
-        :param error_readings:
-        :return:
+        :param error_readings: An iterable of error readings to help decide the required target direction
+        :return: None
         """
         # Define a error vector in out target temperature direction
         dir_error_total = 0.0
@@ -410,22 +424,21 @@ class System(object):
         # Now we need to decide if our current temperature target has been reached in the current temperature mode
         if self.element.heating:
 
-            # Only cumulative reading in our target direction
+            # Only cumulative readings in the target direction
             for e in error_readings:
-                if e > 0.0:
+                if e < 0.0:
                     dir_error_total += e
 
         else:
             for e in error_readings:
-                if e < 0.0:
+                if e > 0.0:
                     dir_error_total += e
 
         # Catch temperature in direction satisfied
         if dir_error_total == 0.0:
             # Switch heating/cooling direction
             self.element.heating = self.element.cooling
-
-            # self.element.enabled = True
+            self.element.apply_state()
 
     def enter_main_loop(self) -> None:
         """
