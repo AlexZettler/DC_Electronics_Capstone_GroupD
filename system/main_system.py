@@ -231,11 +231,12 @@ class System(object):
 
             system_logger.info(f"Room {_id} target temp is: {self.room_sensors[_id].target_temp}")
 
+            # todo:make this more sensical
             self.room_dampers[_id] = RegisterFlowController(
                 _id=_id,
                 pin=system_constants.room_servo_pins[_id],
-                min_duty=5.0,
-                max_duty=15.0,
+                min_duty=15.0,
+                max_duty=5.0,
             )
 
         # Setup element sensors
@@ -375,16 +376,16 @@ class System(object):
             if self.element.enabled:
 
                 # If system in heating mode and the room temperature is still below the target
-                if self.element.heating and room_error_readings[_id].celsius >= 0.0:
-                    servo.rotate_to_angle(90.0)
+                if self.element.heating and room_error_readings[_id].celsius <= 0.0:
+                    servo.rotate_to_angle(0.0)
 
                 # If system in cooling mode and the room temperature is still above the target
-                elif self.element.cooling and room_error_readings[_id].celsius <= 0.0:
-                    servo.rotate_to_angle(90.0)
+                elif self.element.cooling and room_error_readings[_id].celsius >= 0.0:
+                    servo.rotate_to_angle(0.0)
 
                 # The case if the temperature target has not been reached given the current system state
                 else:
-                    servo.rotate_to_angle(0.0)
+                    servo.rotate_to_angle(90.0)
 
             # Dampers should be closed when the system is off
             else:
