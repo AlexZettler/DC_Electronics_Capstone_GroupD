@@ -68,7 +68,7 @@ class TemperatureSensor(object):
             temp_c = float(temp_string) / 1000.0
 
             # Log the retrieved temperature
-            self.log_temperature(temp_c)
+            self.log_temperature(f"{self._id}, {temp_c}")
 
             # return the c degree float measurement of the temperature
             return Temperature(temp_c)

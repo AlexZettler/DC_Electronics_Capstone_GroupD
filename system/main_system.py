@@ -225,7 +225,9 @@ class System(object):
             self.room_sensors[_id] = TargetTemperatureSensor(
                 _id=_id,
                 _uuid=system_constants.sensor_UUIDS[_id],
-                target_temperature=Temperature(20.0))
+                target_temperature=Temperature(system_constants.room_temp_targets[_id]))
+
+            system_logger.info(f"Room {_id} target temp is: {self.room_sensors[_id].target_temp}")
 
             self.room_dampers[_id] = RegisterFlowController(
                 _id=_id,
@@ -359,6 +361,8 @@ class System(object):
 
         # Create a dictionary to store all temperature errors
         room_error_readings = self.get_room_temperature_errors(room_readings)
+
+
 
         # Iterate through each room
         for _id, servo in self.room_dampers.items():
