@@ -235,8 +235,8 @@ class System(object):
             self.room_dampers[_id] = RegisterFlowController(
                 _id=_id,
                 pin=system_constants.room_servo_pins[_id],
-                min_duty=15.0,
-                max_duty=5.0,
+                min_duty=5.0,
+                max_duty=15.0,
             )
 
         # Setup element sensors
@@ -371,6 +371,7 @@ class System(object):
         for _id, servo in self.room_dampers.items():
 
             print(f"enabled: {self.element.enabled}")
+            print(f"heating: {self.element.heating}")
             print(f"room temperature delta: {room_error_readings[_id].celsius}")
 
             if self.element.enabled:

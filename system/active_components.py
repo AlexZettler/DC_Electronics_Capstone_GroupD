@@ -8,6 +8,8 @@ from data_handling import custom_logger
 import time
 from system.system_constants import heating_pin, cooling_pin
 import data_handling.linear_interpolation as li
+import math
+import itertools
 
 # Create a logger for general system information
 system_logger = custom_logger.create_system_logger()
@@ -230,8 +232,8 @@ class Servo(object):
         self.line = li.Line(
             x1=0.0,
             x2=90.0,
-            y1=min_duty,
-            y2=max_duty
+            y1=max_duty,
+            y2=min_duty
         )
 
         # Setup PWM controller
