@@ -377,11 +377,13 @@ class System(object):
 
                 # If system in heating mode and the room temperature is still below the target
                 if self.element.heating and (room_error_readings[_id].celsius >= 0.0):
+                    print("System not heating room")
                     servo.rotate_to_angle(90.0)
 
                 # If system in cooling mode and the room temperature is still above the target
                 elif self.element.cooling and (room_error_readings[_id].celsius <= 0.0):
                     servo.rotate_to_angle(90.0)
+                    print("System not cooling room")
 
                 # The case if the temperature target has not been reached given the current system state
                 else:
