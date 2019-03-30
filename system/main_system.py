@@ -369,6 +369,8 @@ class System(object):
         # Iterate through each room
         for _id, servo in self.room_dampers.items():
 
+            print(f"enabled: {self.element.enabled}")
+
             if self.element.enabled:
 
                 # If system in heating mode and the room temperature is still below the target
