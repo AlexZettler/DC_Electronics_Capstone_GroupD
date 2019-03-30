@@ -362,7 +362,7 @@ class System(object):
         # Create a dictionary to store all temperature errors
         room_error_readings = self.get_room_temperature_errors(room_readings)
 
-
+        print(room_error_readings)
 
         # Iterate through each room
         for _id, servo in self.room_dampers.items():
