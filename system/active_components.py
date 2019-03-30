@@ -142,7 +142,7 @@ class Element(PID):
 
     @property
     def cooling(self) -> bool:
-        return self._heating
+        return not self._heating
 
     @cooling.setter
     def cooling(self, val: bool):
