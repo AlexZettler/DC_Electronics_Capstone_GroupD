@@ -370,6 +370,7 @@ class System(object):
         for _id, servo in self.room_dampers.items():
 
             print(f"enabled: {self.element.enabled}")
+            print(f"room temperature delta: {room_error_readings[_id].celsius}")
 
             if self.element.enabled:
 
@@ -378,8 +379,8 @@ class System(object):
                     servo.rotate_to_angle(90.0)
 
                 # If system in cooling mode and the room temperature is still above the target
-                elif self.element.cooling and room_error_readings[_id].celsius >= 0.0:
-                    servo.rotate_to_angle(90.0)
+                #elif self.element.cooling and room_error_readings[_id].celsius >= 0.0:
+                #    servo.rotate_to_angle(90.0)
 
                 # The case if the temperature target has not been reached given the current system state
                 else:
