@@ -10,6 +10,7 @@ from system.system_constants import heating_pin, cooling_pin
 import data_handling.linear_interpolation as li
 import math
 import itertools
+from queue import Queue
 
 # Create a logger for general system information
 system_logger = custom_logger.create_system_logger()
@@ -222,6 +223,44 @@ class Element(PID):
             system_logger.info(f"All rooms have reached their target temperature, switching to {new_mode_name} mode")
             self.heating = self.cooling
 
+class ServoPWMDispatcher(object):
+    pwm_freq = 50.0
+    
+    def __init__(self, pwm_pin: int, control_pins: dict):
+        # Define the BCM pin to work with
+        self._pin = pwm_pin
+        self._control_pins = control_pins
+        self.cmd_queue = Queue()
+
+        for _id, cp in self._control_pins.items():
+            # Setup each servo enable pin as an output and pull the pin low
+            GPIO.setup(self._pin, GPIO.OUT)    
+            GPIO.output(self._pin, False)
+
+        # Setup PWM controller
+        GPIO.setup(self._pin, GPIO.OUT)
+        self.pwm = GPIO.PWM(self._pin, self.pwm_freq)
+        
+    def add_room_to_deg_to_queue(self, room_id, deg_measure: float):
+        self.cmd_queue.put(tuple(room_id, deg_measure))
+    
+
+    def setup_action_thread(self):
+        t = Thread()
+        
+        def thread_action(obj: ServoPWMDispatcher):
+            obj.enable()
+            time.sleep(_time)
+            obj.disable()
+
+        servo_action_thread = Thread(
+            target=thread_action,
+            args=(self,)
+        )
+        servo_enable_thread.start()
+
+    def action_loop(self):
+        pass 
 
 class Servo(object):
     """
