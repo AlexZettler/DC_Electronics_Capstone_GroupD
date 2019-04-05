@@ -30,7 +30,7 @@ class PID(OutputController):
     """
     A class representing a PID interface for a device
     """
-    
+
     def __init__(self, _room_id, target, p, i, d, b):
         # Sets output id
         super().__init__(_room_id)
@@ -223,44 +223,69 @@ class Element(PID):
             system_logger.info(f"All rooms have reached their target temperature, switching to {new_mode_name} mode")
             self.heating = self.cooling
 
+
 class ServoPWMDispatcher(object):
     pwm_freq = 50.0
-    
-    def __init__(self, pwm_pin: int, control_pins: dict):
+
+    def __init__(self, pwm_pin: int, control_pins: dict, pwm_scaling):
         # Define the BCM pin to work with
         self._pin = pwm_pin
         self._control_pins = control_pins
+
+        self.room_pwm_lines = {}
+
+        for _id in self._control_pins.keys():
+            duty_at_deg0, duty_at_deg90 = pwm_scaling[_id]
+
+            # Create the angle duty cycle response line
+            self.room_pwm_lines[_id] = li.Line(
+                x1=0.0,
+                x2=90.0,
+                y1=duty_at_deg0,
+                y2=duty_at_deg90
+            )
+
         self.cmd_queue = Queue()
+
+        self._servo_positions = {k: 0.0 for k in self._control_pins.keys()}
 
         for _id, cp in self._control_pins.items():
             # Setup each servo enable pin as an output and pull the pin low
-            GPIO.setup(self._pin, GPIO.OUT)    
-            GPIO.output(self._pin, False)
+            GPIO.setup(self._pin, GPIO.OUT)
+            GPIO.output(cp, False)
 
         # Setup PWM controller
         GPIO.setup(self._pin, GPIO.OUT)
         self.pwm = GPIO.PWM(self._pin, self.pwm_freq)
-        
-    def add_room_to_deg_to_queue(self, room_id, deg_measure: float):
-        self.cmd_queue.put(tuple(room_id, deg_measure))
-    
 
-    def setup_action_thread(self):
-        t = Thread()
-        
-        def thread_action(obj: ServoPWMDispatcher):
-            obj.enable()
-            time.sleep(_time)
-            obj.disable()
+    def set_all_rooms_to_pwm(self, sig):
+        for pin in self._control_pins.values():
+            GPIO.output(pin, True)
+        sig
+        time.sleep(0.5)
+        for pin in self._control_pins.values():
+            GPIO.output(pin, False)
+
+    def add_room_to_deg_to_queue(self, room_id, deg_measure: float):
+        self.cmd_queue.put((room_id, deg_measure,))
+
+    def setup_action_handle_thread(self):
+
+        def thread_loop(obj: ServoPWMDispatcher, ):
+            while True:
+                if not self.cmd_queue.empty():
+                    room_id, deg_measure = self.cmd_queue.get()
+                    GPIO.output(self._control_pins[room_id], False)
+
+                else:
+                    time.sleep(0.2)
 
         servo_action_thread = Thread(
-            target=thread_action,
+            target=thread_loop,
             args=(self,)
         )
-        servo_enable_thread.start()
+        servo_action_thread.start()
 
-    def action_loop(self):
-        pass 
 
 class Servo(object):
     """
@@ -351,10 +376,10 @@ class Servo(object):
         return result
 
     def apply_duty(self, duty: float):
-        #if self.verify_pwm_within_limits(duty):
+        # if self.verify_pwm_within_limits(duty):
         self.pwm.ChangeDutyCycle(duty)
-        #else:
-            #print(f"{duty} is an invalid duty cycle!")
+        # else:
+        # print(f"{duty} is an invalid duty cycle!")
 
     def get_time_to_adjust(self, current_angle: float, target_angle: float):
         """
