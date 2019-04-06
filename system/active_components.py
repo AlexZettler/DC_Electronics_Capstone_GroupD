@@ -226,14 +226,17 @@ class Element(PID):
 
 class ServoPWMDispatcher(object):
     pwm_freq = 50.0
+    servo_deg_per_sec = 180.0
 
     def __init__(self, pwm_pin: int, control_pins: dict, pwm_scaling):
         # Define the BCM pin to work with
         self._pin = pwm_pin
+
+        # Store the pins that each room's servo is enable/controlled with
         self._control_pins = control_pins
 
+        # Define angle to pwm scaling lines
         self.room_pwm_lines = {}
-
         for _id in self._control_pins.keys():
             duty_at_deg0, duty_at_deg90 = pwm_scaling[_id]
 
@@ -245,9 +248,8 @@ class ServoPWMDispatcher(object):
                 y2=duty_at_deg90
             )
 
-        self.cmd_queue = Queue()
-
-        self._servo_positions = {k: 0.0 for k in self._control_pins.keys()}
+        avg_0deg_pwm = sum(device[0.0] for device in self.room_pwm_lines.values()) / len(self.room_pwm_lines)
+        avg_90deg_pwm = sum(device[90.0] for device in self.room_pwm_lines.values()) / len(self.room_pwm_lines)
 
         for _id, cp in self._control_pins.items():
             # Setup each servo enable pin as an output and pull the pin low
@@ -258,11 +260,32 @@ class ServoPWMDispatcher(object):
         GPIO.setup(self._pin, GPIO.OUT)
         self.pwm = GPIO.PWM(self._pin, self.pwm_freq)
 
-    def set_all_rooms_to_pwm(self, sig):
+        # Define a command queue for the multiplexed controller
+        self.cmd_queue = Queue()
+
+        # reset positions of each device
+        self._servo_positions = {k: 0.0 for k in self._control_pins.keys()}
+        self.set_all_rooms_to_pwm(avg_0deg_pwm)
+
+        for _id in self._control_pins.keys():
+            self.add_room_to_deg_to_queue(_id, 0.0)
+
+        # Create the action handler thread
+        self.setup_action_handle_thread()
+
+    def set_all_rooms_to_pwm(self, duty: float):
+        """
+        Sets all room servos to a given PWM duty
+        :param duty: The duty to set room servos to
+        :return:
+        """
         for pin in self._control_pins.values():
             GPIO.output(pin, True)
-        sig
-        time.sleep(0.5)
+
+        # Reset all servos to an averaged
+        self.pwm.ChangeDutyCycle(duty)
+        time.sleep(180.0 / self.servo_deg_per_sec)
+
         for pin in self._control_pins.values():
             GPIO.output(pin, False)
 
@@ -271,14 +294,32 @@ class ServoPWMDispatcher(object):
 
     def setup_action_handle_thread(self):
 
-        def thread_loop(obj: ServoPWMDispatcher, ):
+        def thread_loop(obj: ServoPWMDispatcher):
             while True:
                 if not self.cmd_queue.empty():
+
+                    # Retrieve new action parameters
                     room_id, deg_measure = self.cmd_queue.get()
-                    GPIO.output(self._control_pins[room_id], False)
+
+                    # Enable the pwm line that is being worked with
+                    GPIO.output(obj._control_pins[room_id], True)
+
+                    # Set PWM output to the degree measure
+                    obj.pwm.ChangeDutyCycle(obj.room_pwm_lines[deg_measure])
+
+                    # Wait period of time for servo to transition
+                    angle_delta = math.fabs(obj._servo_positions[room_id] - deg_measure)
+                    expected_transition_time = angle_delta / obj.servo_deg_per_sec
+                    time.sleep(expected_transition_time)
+
+                    # Store new position
+                    self._servo_positions[room_id] = deg_measure
+
+                    # Enable the pwm line that is being worked with
+                    GPIO.output(obj._control_pins[room_id], False)
 
                 else:
-                    time.sleep(0.2)
+                    time.sleep(0.5)
 
         servo_action_thread = Thread(
             target=thread_loop,
