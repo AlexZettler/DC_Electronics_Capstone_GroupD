@@ -226,7 +226,7 @@ class Element(PID):
 
 class ServoPWMDispatcher(object):
     pwm_freq = 50.0
-    servo_deg_per_sec = 180.0
+    servo_deg_per_sec = 90.0
 
     def __init__(self, pwm_pin: int, control_pins: dict, pwm_scaling):
         # Define the BCM pin to work with
@@ -253,7 +253,7 @@ class ServoPWMDispatcher(object):
 
         for _id, cp in self._control_pins.items():
             # Setup each servo enable pin as an output and pull the pin low
-            GPIO.setup(self._pin, GPIO.OUT)
+            GPIO.setup(cp, GPIO.OUT)
             GPIO.output(cp, False)
 
         # Setup PWM controller
@@ -267,7 +267,7 @@ class ServoPWMDispatcher(object):
         self._servo_positions = {k: 0.0 for k in self._control_pins.keys()}
         self.set_all_rooms_to_pwm(avg_0deg_pwm)
 
-        for _id in self._control_pins.keys():
+        for _id, _pin in self._control_pins.items():
             self.add_room_to_deg_to_queue(_id, 0.0)
 
         # Create the action handler thread
@@ -290,30 +290,50 @@ class ServoPWMDispatcher(object):
             GPIO.output(pin, False)
 
     def add_room_to_deg_to_queue(self, room_id, deg_measure: float):
-        self.cmd_queue.put((room_id, deg_measure,))
+        self.cmd_queue.put(("angle", room_id, deg_measure))
+
+    def add_room_set_pwm_to_queue(self, room_id, pwm: float):
+        self.cmd_queue.put(("angle", room_id, pwm))
 
     def setup_action_handle_thread(self):
+        """
+        Set up a thread to handle new room rotation events
+        """
 
         def thread_loop(obj: ServoPWMDispatcher):
             while True:
                 if not self.cmd_queue.empty():
-
+                    print("beep boop")
+                    
                     # Retrieve new action parameters
-                    room_id, deg_measure = self.cmd_queue.get()
+                    mode, room_id, param = self.cmd_queue.get()
 
                     # Enable the pwm line that is being worked with
                     GPIO.output(obj._control_pins[room_id], True)
+                    
+                    if mode == "angle":
+                    
+                        # Set PWM output to the degree measure
+                        obj.pwm.ChangeDutyCycle(obj.room_pwm_lines[room_id][param])
 
-                    # Set PWM output to the degree measure
-                    obj.pwm.ChangeDutyCycle(obj.room_pwm_lines[deg_measure])
+                        # Wait period of time for servo to transition
+                        angle_delta = math.fabs(obj._servo_positions[room_id] - param)
+                        expected_transition_time = angle_delta / obj.servo_deg_per_sec
+                        print(f"sleeping {expected_transition_time}")
+                        time.sleep(expected_transition_time)
+                        
+                        # Store new position
+                        self._servo_positions[room_id] = param
 
-                    # Wait period of time for servo to transition
-                    angle_delta = math.fabs(obj._servo_positions[room_id] - deg_measure)
-                    expected_transition_time = angle_delta / obj.servo_deg_per_sec
-                    time.sleep(expected_transition_time)
+                    elif mode == "duty":
 
-                    # Store new position
-                    self._servo_positions[room_id] = deg_measure
+                        # Set PWM output 
+                        obj.pwm.ChangeDutyCycle(param)
+
+                        # Wait period of time for servo to transition
+                        expected_transition_time = 180/ obj.servo_deg_per_sec
+                        print(f"sleeping {expected_transition_time}")
+                        time.sleep(expected_transition_time)
 
                     # Enable the pwm line that is being worked with
                     GPIO.output(obj._control_pins[room_id], False)

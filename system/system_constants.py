@@ -33,11 +33,11 @@ room_servo_pins = {
     _id: pin_name for _id, pin_name in enumerate(iterable=(13, 19, 26))
 }
 
-# Define the pin to control servos
-servo_enable_pin = 5
+# Define the shared PWM signal pin
+shared_pwm_signal_pin = 6
 
 # Define the pin to control fans
-fan_enable_pin = 6
+fan_enable_pin = 5
 
 # Define room sensors from ID: UUID pair
 room_temp_UUID_list = ["00000b0bd120", "00000b0be1c7", "00000b0bf3f0"]
