@@ -34,7 +34,7 @@ room_servo_pins = {
 }
 
 # Define the shared PWM signal pin
-shared_pwm_signal_pin = 6
+shared_pwm_signal_pin = 12
 
 # Define the pin to control fans
 fan_enable_pin = 5

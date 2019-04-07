@@ -16,7 +16,7 @@ if __name__ == '__main__':
     servo_number = 0
     
     servo_pin = system_constants.room_servo_pins[servo_number]
-    
+    print(f"Servo pin is {servo_pin}")
     duty_deg_0, duty_deg_90, = system_constants.servo_duty_calibrations[servo_number]
     
     s = Servo(servo_pin, duty_deg_0, duty_deg_90)
