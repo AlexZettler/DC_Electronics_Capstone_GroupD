@@ -241,7 +241,7 @@ class ServoPWMDispatcher(object):
         # Define angle to pwm scaling lines
         self.room_pwm_lines = {}
 
-        #Set servo calibrations
+        # Set servo calibrations
         for _id in self._control_pins.keys():
             duty_at_deg0, duty_at_deg90 = pwm_scaling[_id]
 
@@ -534,9 +534,10 @@ class RegisterFlowController(Servo):
 
     def __init__(self, _id, pin, duty_at_deg0: float, duty_at_deg90: float):
         # Creates the parent servo object
-        super().__init__(pin=pin,
-                         duty_at_deg0=duty_at_deg0,
-                         duty_at_deg90=duty_at_deg90)
+        super().__init__(
+            pin=pin,
+            duty_at_deg0=duty_at_deg0,
+            duty_at_deg90=duty_at_deg90)
 
         self.logger = custom_logger.create_output_logger(_id)
 

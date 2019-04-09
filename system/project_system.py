@@ -19,6 +19,8 @@ from bluetooth import *
 from data_handling import custom_logger
 from data_handling.custom_errors import OverTemperature, UnderTemperature
 
+from multiprocessing import Manager
+
 # A bluetooth logging module used for sending new events over bluetooth
 # from bluetooth_connection import bluetooth_logging_handler
 
@@ -30,25 +32,16 @@ from system.active_components import Element, RegisterFlowController, DeviceEnab
 # System components
 from system.sensors import TargetTemperatureSensor, ElementSensor, TemperatureSensor, W1Bus, TemperatureNotFound
 
+from event_system.event_handler import EventHandler
+from event_system.events import Event
+from system.system_events import *
+
 # Setup system logger
 system_logger = custom_logger.create_system_logger()
 
 
 # Add bluetooth handler to basic system logger
 # system_logger.addHandler(bluetooth_logging_handler.BTHandler())
-
-
-class SystemUpdate(object):
-    """
-    This object is responsible for representing an update to the system.
-    This could be sent from the bluetooth device, or user input in a seperate command parsing process
-    """
-
-    def __init__(self, update_time: datetime.datetime, update_name: str, update_value: object):
-        self.update_time = update_time
-        self.update_name = update_name
-        self.update_value = update_value
-
 
 class BluetoothManager(object):
     def __init__(self):
@@ -151,29 +144,119 @@ class InvalidCommand(Exception):
     pass
 
 
-class UpdateHandler(object):
-    def __init__(self):
-        self.wait_for_input_command()
+class StringCommandHandler(object):
+    def __init__(self, handler_queue: queue.Queue):
+        self.handler_queue = handler_queue
 
-    def wait_for_input_command(self):
+    def open_command_window(self):
+        pass
+
+    def get_input_loop(self):
+        while True:
+            inp = input("Please enter a command: ")
+            self.handle_input(inp)
+
+    @staticmethod
+    def input_parse(inp):
+        cmd_args = inp.split()
+        command = cmd_args[0]
+        args = cmd_args[1:]
+        return command, args
+
+    def handle_input(self, inp):
+        command, args = self.input_parse(inp)
+
+        _event = None
 
         try:
-            while True:
-                inp = input("Please enter a command: ")
-                try:
-                    cmd = self.input_parse(inp)
-                    self.command_dispatch(cmd)
-                except InvalidCommand:
+            if command == "system":
+                if args[0] == "start":
                     pass
-        except KeyboardInterrupt:
-            pass
+                elif args[0] == "stop":
+                    pass
+                elif args[0] == "operation":
+                    if args[1] == "mode":
+                        if args[2] == "test":
+                            pass
+                        elif args[2] == "auto":
+                            pass
+                        elif args[2] == "extreme":
+                            pass
+                        else:
+                            raise InvalidCommand
+                    else:
+                        raise InvalidCommand
+                else:
+                    raise InvalidCommand
 
-    def input_parse(self, inp):
-        cmd_args = inp.split()
+            elif command == "element":
+                if args[0] == "set":
+                    if args[1] == "heat":
+                        pass
+                    elif args[1] == "cool":
+                        pass
+                    elif args[1] == "heat+cool":
+                        pass
+                    else:
+                        raise InvalidCommand
 
-        # cmd_args[0]
+                elif args[0] == "get":
+                    if args[1] == "status":
+                        pass
+                    else:
+                        raise InvalidCommand
+                else:
+                    raise InvalidCommand
 
-    def command_dispatch(self):
+            elif command == "room":
+                if args[0] == "set":
+                    if args[1] == "angle":
+                        angle = float(args[2])
+                    elif args[1] == "pwm":
+                        pwm = float(args[2])
+                    elif args[1] == "temp":
+                        temp = Temperature(float(args[2]))
+                    else:
+                        raise InvalidCommand
+
+                elif args[0] == "get":
+                    if args[1] == "status":
+                        pass
+                    else:
+                        raise InvalidCommand
+
+
+            elif command == "fan":
+                if args[0] == "set":
+                    if args[1] == "on":
+                        pass
+
+                    elif args[1] == "off":
+                        pass
+                    else:
+                        raise InvalidCommand
+
+                elif args[0] == "get":
+                    if args[1] == "status":
+                        pass
+                else:
+                    raise InvalidCommand
+            else:
+                raise InvalidCommand
+            # Completed argument handling
+
+            # Handle the actual event if no errors were raised
+            if isinstance(_event, Event):
+                self.command_dispatch(_event)
+
+            else:
+                print(f"Unassigned command with arguments: {inp}")
+
+        # Except an error with invalid arguments
+        except (InvalidCommand, KeyError):
+            print(f"Invalid command: {inp}")
+
+    def command_dispatch(self, command, ):
         pass
 
 
@@ -203,6 +286,10 @@ class System(object):
         # Define the element and enable it
         self.element = Element("element", peltier_heating=True)
 
+        # Create a object manager for inter-process communication
+        self.interprocess_object_manager = Manager()
+
+        # Enable the system if default_enabled is true
         if default_enabled:
             self.element.enabled = True
             self.element.apply_state()
@@ -211,9 +298,13 @@ class System(object):
         self.room_sensors = dict()
         self.room_dampers = dict()
 
+        # Define a temperature sensor for monitoring the temperature outside of the system to get an
+        # indication on the temperature that the system is passively being set to
         self.external_temperature_sensor = TemperatureSensor(
             "external", system_constants.external_sensor_UUID["external"])
 
+        # Define a temperature sensor for the output temperature
+        # of the system that has been transferred from the heat exchanger
         self.temperature_output_sensor = TemperatureSensor(
             "out", system_constants.temperature_output_sensor_UUID["out"])
 
@@ -226,11 +317,11 @@ class System(object):
             if _uuid not in connected_uuids:
                 system_logger.warning(f"The temperature sensor with ID: {_uuid} was unable to be located on the 1W-BUS")
 
-        self.servo_enabler = DeviceEnabler(system_constants.servo_enable_pin)
+        #self.servo_enabler = DeviceEnabler(system_constants.servo_enable_pin)
+
 
         # Setup dampers and sensors for each room
         for _id in room_ids:
-            
             # todo: Gather target temperature
             self.room_sensors[_id] = TargetTemperatureSensor(
                 _id=_id,
@@ -282,7 +373,7 @@ class System(object):
         """
         Retrieves all temperature sensor readings
 
-        :return:
+        :return: None
         """
 
         # Generate a queue for putting temperature values from threads
@@ -382,7 +473,7 @@ class System(object):
         print(f"enabled: {self.element.enabled}\nheating: {self.element.heating}\ncooling: {self.element.cooling}")
 
         # Enable all servos for a period of time
-        self.servo_enabler.time_enable(0.5)
+        #self.servo_enabler.time_enable(0.5)
 
         # Iterate through each room
         for _id, servo in self.room_dampers.items():
@@ -395,8 +486,8 @@ class System(object):
 
                 # If system in heating mode and the room temperature is still below the target
                 if self.element.heating and (room_error_readings[_id].celsius >= 0.0):
-                    print(f"System not heating room {_id}")
                     servo.rotate_to_angle(90.0)
+                    print(f"System not heating room {_id}")
 
                 # If system in cooling mode and the room temperature is still above the target
                 elif self.element.cooling and (room_error_readings[_id].celsius <= 0.0):
@@ -497,4 +588,4 @@ class System(object):
 
 if __name__ == "__main__":
     # run_system()
-    sys = System()
+    sys = System(default_enabled=False)
