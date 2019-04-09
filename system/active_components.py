@@ -224,116 +224,12 @@ class Element(PID):
             self.heating = self.cooling
 
 
-############################
-# Action Event definitions #
-############################
-class Event(object):
-    param_name = None
-
-class ServoEvent(Event):
-    pass
-
-class SetServoToDegree(ServoEvent):
-    param_name = "Servo To Degree"
-
-    def __init__(self, angle):
-        self.angle = angle
-
-
-class SetServoToPWM(ServoEvent):
-    param_name = "Servo To PWM signal"
-
-    def __init__(self, pwm: float):
-        self.pwm = pwm
-
-###################################
-# End of Action Event definitions #
-###################################
-
-
-class EventHandler(object):
-    def __init__(self):
-
-        self._event_queue = Queue()
-        self.action_handling_lock = Lock()
-        #SetServoToDegree
-
-    @property
-    def event_queue(self):
-        return self._event_queue
-
-    def add_event(self, action: Event):
-        """
-        Add an action to the action queue and process it if another action is not currently being processed
-
-        :param action: The action to handle
-        :return: None
-        """
-
-        # Add the event to the queue
-        self._event_queue.put(action)
-
-        # Check if a thread is not currently processing the queue
-        if not self.action_handling_lock.locked():
-            self.process_event_queue()
-
-    def process_event_queue(self):
-        """
-        Process actions until no more actions are in the queue
-        :return: None
-        """
-
-        def event_handle_thread(obj: EventHandler):
-            while not self._event_queue.empty():
-
-                # Retrieve the new event
-                _event = obj._event_queue.get()
-
-                #Switch statement for processing an event based on the event class
-                if isinstance(_event, ServoEvent):
-                    pass
-                    #print(f"Processing new command with arguments {mode}, {room_id}, {param}")
-                elif isinstance(_event, ServoEvent):
-                    pass
-
-
-        event_thread = Thread(
-            target=event_handle_thread,
-            args=(self,)
-        )
-        event_thread.start()
-
-        while not self.event_queue.empty():
-            if not self.action_handling_lock.locked():
-
-                # Ensure that only one process can handle an event
-                self.action_handling_lock.acquire()
-                action = self.event_queue.get()
-                self.dispatch_action(action)
-                self.action_handling_lock.release()
-
-            else:
-                system_logger.warning("The Action Handler could not process the action ")
-
-    def dispatch_action(self, action: Event):
-        """
-        Preforms the appropriate function based on the action
-        :param action: The action to be processed
-        :return:
-        """
-        if isinstance(action, ServoEvent):
-            pass
-
-
-
-
-#####################################
-# Action Event definitions finished #
-#####################################
-
 class ServoPWMDispatcher(object):
     pwm_freq = 50.0
     servo_deg_per_sec = 90.0
+    """
+    Do not use!
+    """
 
     def __init__(self, pwm_pin: int, control_pins: dict, pwm_scaling):
         # Define the BCM pin to work with
@@ -405,69 +301,70 @@ class ServoPWMDispatcher(object):
         for pin in self._control_pins.values():
             GPIO.output(pin, False)
 
-    def add_action_to_queue(self, action: Event):
-        self.cmd_queue.put(action)
+    #def add_action_to_queue(self, action: Event):
+    #    self.cmd_queue.put(action)
 
     def setup_action_handle_thread(self):
+        pass
         """
         Set up a thread to handle new room rotation events
         """
-
-        def thread_loop(obj: ServoPWMDispatcher):
-            while True:
-                if not self.cmd_queue.empty():
-
-                    # Retrieve new action parameters
-                    action = self.cmd_queue.get()
-                    if isinstance(SetServoToDegree):
-
-
-
-                    print(f"Processing new command with arguments {mode}, {room_id}, {param}")
-
-                    # Enable the pwm line that is being worked with
-                    GPIO.output(obj._control_pins[int(room_id)], True)
-
-                    if mode == "angle":
-
-                        _duty_cycle = obj.room_pwm_lines[room_id][param]
-                        print(f"rotating to angle: {param} with duty: {_duty_cycle}")
-                        # Set PWM output to the degree measure
-                        obj.pwm.ChangeDutyCycle(_duty_cycle)
-
-                        # Wait period of time for servo to transition
-                        angle_delta = math.fabs(obj._servo_positions[room_id] - param)
-                        expected_transition_time = angle_delta / obj.servo_deg_per_sec
-                        print(f"sleeping {expected_transition_time}")
-                        time.sleep(expected_transition_time)
-
-                        # Store new position
-                        self._servo_positions[room_id] = param
-
-                    elif mode == "duty":
-
-                        # Set PWM output 
-                        obj.pwm.ChangeDutyCycle(param)
-
-                        # Wait period of time for servo to transition
-                        expected_transition_time = 180 / obj.servo_deg_per_sec
-                        print(f"sleeping {expected_transition_time}")
-                        time.sleep(expected_transition_time)
-
-                    else:
-                        system_logger.warning(f"Action handle thread was passed an invalid command with mode {mode}")
-
-                    # Enable the pwm line that is being worked with
-                    GPIO.output(obj._control_pins[int(room_id)], False)
-
-                else:
-                    time.sleep(0.5)
-
-        servo_action_thread = Thread(
-            target=thread_loop,
-            args=(self,)
-        )
-        servo_action_thread.start()
+        #
+        # def thread_loop(obj: ServoPWMDispatcher):
+        #     while True:
+        #         if not self.cmd_queue.empty():
+        #
+        #             # Retrieve new action parameters
+        #             action = self.cmd_queue.get()
+        #             if isinstance(SetServoToDegree):
+        #
+        #
+        #
+        #             print(f"Processing new command with arguments {mode}, {room_id}, {param}")
+        #
+        #             # Enable the pwm line that is being worked with
+        #             GPIO.output(obj._control_pins[int(room_id)], True)
+        #
+        #             if mode == "angle":
+        #
+        #                 _duty_cycle = obj.room_pwm_lines[room_id][param]
+        #                 print(f"rotating to angle: {param} with duty: {_duty_cycle}")
+        #                 # Set PWM output to the degree measure
+        #                 obj.pwm.ChangeDutyCycle(_duty_cycle)
+        #
+        #                 # Wait period of time for servo to transition
+        #                 angle_delta = math.fabs(obj._servo_positions[room_id] - param)
+        #                 expected_transition_time = angle_delta / obj.servo_deg_per_sec
+        #                 print(f"sleeping {expected_transition_time}")
+        #                 time.sleep(expected_transition_time)
+        #
+        #                 # Store new position
+        #                 self._servo_positions[room_id] = param
+        #
+        #             elif mode == "duty":
+        #
+        #                 # Set PWM output
+        #                 obj.pwm.ChangeDutyCycle(param)
+        #
+        #                 # Wait period of time for servo to transition
+        #                 expected_transition_time = 180 / obj.servo_deg_per_sec
+        #                 print(f"sleeping {expected_transition_time}")
+        #                 time.sleep(expected_transition_time)
+        #
+        #             else:
+        #                 system_logger.warning(f"Action handle thread was passed an invalid command with mode {mode}")
+        #
+        #             # Enable the pwm line that is being worked with
+        #             GPIO.output(obj._control_pins[int(room_id)], False)
+        #
+        #         else:
+        #             time.sleep(0.5)
+        #
+        # servo_action_thread = Thread(
+        #     target=thread_loop,
+        #     args=(self,)
+        # )
+        # servo_action_thread.start()
 
 
 class Servo(object):
@@ -653,6 +550,11 @@ class RegisterFlowController(Servo):
         self.logger.info(f"{angle}")
         super().rotate_to_angle(angle)
 
+    def open_register(self):
+        self.rotate_to_angle(0.0)
+
+    def close_register(self):
+        self.rotate_to_angle(90.0)
 
 class DeviceEnabler(object):
     """

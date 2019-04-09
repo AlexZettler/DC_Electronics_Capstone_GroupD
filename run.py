@@ -1,4 +1,4 @@
-from system.main_system import System
+from system.project_system import System
 from data_handling.custom_logger import create_system_logger
 
 if __name__ == "__main__":
