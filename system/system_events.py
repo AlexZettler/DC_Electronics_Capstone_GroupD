@@ -4,6 +4,35 @@ from system.sensors import TemperatureSensor
 from system.sensors import TargetTemperatureSensor
 from data_handling.data_classes import Temperature
 
+
+class SystemEvent(Event):
+    pass
+
+
+class SystemStartEvent(SystemEvent):
+    pass
+
+
+class SystemStopEvent(SystemEvent):
+    pass
+
+
+class SystemOperationEvent(SystemEvent):
+    pass
+
+
+class SystemOperationModeTestEvent(SystemOperationEvent):
+    pass
+
+
+class SystemOperationModeAutoEvent(SystemOperationEvent):
+    pass
+
+
+class SystemOperationModeExtremeEvent(SystemOperationEvent):
+    pass
+
+
 class ServoEvent(Event):
     pass
 
@@ -30,6 +59,22 @@ class RegisterCloseEvent(RegisterEvent):
         self.register.close_register()
 
 
+class RegisterRotateEvent(RegisterEvent):
+    def __init__(self, register: RegisterFlowController, new_angle: float):
+        super().__init__(register)
+        self.new_angle = new_angle
+
+    def action(self):
+        self.register.rotate_to_angle(self.new_angle)
+
+
+class RegisterPWMEvent(RegisterEvent):
+    def __init__(self, register: RegisterFlowController, new_pwm: float):
+        super().__init__(register)
+        self.new_pwm = new_pwm
+
+    def action(self):
+        self.register.apply_duty(self.new_pwm)
 
 
 class TemperatureTargetUpdatedEvent(Event):
@@ -40,5 +85,3 @@ class TemperatureTargetUpdatedEvent(Event):
 
     def action(self):
         self.target_sensor.target_temp = self.new_target_value
-
-

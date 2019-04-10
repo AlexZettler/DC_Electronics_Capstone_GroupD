@@ -3,7 +3,6 @@ This file is responsible for
 
 """
 
-
 from threading import Thread, Lock
 from queue import Queue
 
@@ -73,21 +72,3 @@ class EventHandler(object):
         """
 
         _event.action()
-
-
-class ServoEventHandler(EventHandler):
-
-    def event_handle(self, _event: Event):
-        """
-        An method used to handle a servo event
-
-        :param _event: The action to be processed
-        :return: None
-        """
-
-        # Switch statement for processing an event based on the event class
-        if isinstance(_event, ServoEvent):
-            pass
-            # print(f"Processing new command with arguments {mode}, {room_id}, {param}")
-        elif isinstance(_event, ServoEvent):
-            pass

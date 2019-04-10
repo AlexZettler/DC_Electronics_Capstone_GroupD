@@ -43,101 +43,90 @@ system_logger = custom_logger.create_system_logger()
 # Add bluetooth handler to basic system logger
 # system_logger.addHandler(bluetooth_logging_handler.BTHandler())
 
-class BluetoothManager(object):
-    def __init__(self):
-        self.bt_lock = Lock()
-        self.initialize_connection()
-        self.setup_threads()
+class BT_Server(object):
+    """
+    A Bluetooth server is a device which is responsible for managing the connection to client devices
 
-    def initialize_connection(self):
+    """
+
+    def __init__(self):
         # Configure bluetooth socket_server
-        self.socket_server = BluetoothSocket(RFCOMM)
-        self.socket_server.bind(("", PORT_ANY))
-        self.socket_server.listen(1)
+        self.server_socket = BluetoothSocket(RFCOMM)
+
+        self.client_socket = None
+        self.client_info = None
+
+        self.temp_gather_thread = None
+
+        self.server_socket.bind(("", PORT_ANY))
+        self.server_socket.listen(1)
 
         # Get the port that the socket_server it bound to
-        self.port = self.socket_server.getsockname()[1]
+        self.port = self.server_socket.getsockname()[1]
 
         self.uuid = "94f39d29-7d6d-437d-973b-fba39e49d4ee"
 
-    def setup_threads(self) -> None:
-        """
-        Setup threads for transmission and receiving
-        :return: None
-        """
-        self.receiver_thread = Thread(target=self.receiver_loop, name=None, args=(), kwargs={}, daemon=None)
-        self.transmitter_thread = Thread(target=self.transmitter_loop, name=None, args=(), kwargs={}, daemon=None)
+        # self.advertise_BT_service()
 
-        self.receiver_thread.start()
-        self.transmitter_thread.start()
+    def wait_for_client(self):
 
-    def transmitter_loop(self):
-        shared_queue = None
-        while True:
-            for d in shared_queue:
-                self.send_string(d)
+        system_logger.info(f"Waiting for connection on RFCOMM channel {self.port}")
+        self.client_socket, self.client_info = self.server_socket.accept()
+        system_logger.info(f"Accepted connection from {self.client_info}")
 
-    def receiver_loop(self):
-        shared_queue = None
-        while True:
-            for d in shared_queue:
-                self.receive_data()
-
-    def advertise_service(self):
+    def advertise_BT_service(self):
         advertise_service(
-            server_sock, "SampleServer",
-            service_id=uuid,
-            service_classes=[uuid, SERIAL_PORT_CLASS],
+            self.server_socket, "SampleServer",
+            service_id=self.uuid,
+            service_classes=[self.uuid, SERIAL_PORT_CLASS],
             profiles=[SERIAL_PORT_PROFILE],
             # protocols = [ OBEX_UUID ]
         )
 
     def stop_server(self):
-        self.socket_server.close()
-        print("Server stopped")
+        # Close both client and server sockets
+        self.server_socket.close()
+        self.client_socket.close()
+        self.server_socket = None
+        self.client_socket = None
 
-    def wait_for_client(self):
+        system_logger.info("BT Server stopped")
 
-        print(f"Waiting for connection on RFCOMM channel {self.port}")
-
-        self.client_sock, self.client_info = self.socket_server.accept()
-        print(f"Accepted connection from {self.client_info}")
-
-    def receive_data(self):
+    def receive_data_to_queue_loop(self, _data_queue: queue.Queue):
 
         try:
             while True:
-                data = self.socket_server.recv(1024)
+                data = self.server_socket.recv(1024)
                 if len(data) == 0:
                     break
+                _data_queue.put(data)
+                system_logger.debug(f"received {data}")
 
-                print(f"received [{data}]")
-
-        except IOError:
+        except IOError as e:
             self.client_disconnected()
+            raise e
+
+    def begin_data_receive_loop(self, _data_queue: queue.Queue):
+        self.event_thread = Thread(
+            target=self.receive_data_to_queue_loop,
+            args=(_data_queue,),
+            kwargs={}
+        )
+        self.event_thread.start()
 
     def send_string(self, _string):
         print("Transmission begun.")
         # for p in break_string_into_segmented_byte_list(_string, None):
-        self.client_sock.send(_string)
+        self.client_socket.send(_string)
 
         print("Transmission complete.")
 
     def client_disconnected(self):
-        self.client_sock = None
+        self.client_socket = None
         self.client_info = None
-        self.client_sock.close()
+        self.client_socket.close()
 
         print("Client disconnected")
-
-    def advertise_service(self):
-        advertise_service(
-            server_sock, "SampleServer",
-            service_id=uuid,
-            service_classes=[uuid, SERIAL_PORT_CLASS],
-            profiles=[SERIAL_PORT_PROFILE],
-            # protocols = [ OBEX_UUID ]
-        )
 
 
 class InvalidCommand(Exception):
@@ -145,15 +134,23 @@ class InvalidCommand(Exception):
 
 
 class StringCommandHandler(object):
-    def __init__(self, handler_queue: queue.Queue):
-        self.handler_queue = handler_queue
 
-    def open_command_window(self):
-        pass
+    # todo: Add a new Popen process to get input from
+    def __init__(self, handler: EventHandler, system):
+        self.handler = handler
+        self.attached_system = system
+        # self.get_input_loop()
+
+    def start(self):
+        t = Thread(target=self.get_input_loop)
+        t.start()
+
+    def get_input(self) -> str:
+        raise NotImplementedError
 
     def get_input_loop(self):
         while True:
-            inp = input("Please enter a command: ")
+            inp = self.get_input()
             self.handle_input(inp)
 
     @staticmethod
@@ -171,9 +168,11 @@ class StringCommandHandler(object):
         try:
             if command == "system":
                 if args[0] == "start":
-                    pass
+                    _event = SystemStartEvent()
+
                 elif args[0] == "stop":
-                    pass
+                    _event = SystemStopEvent()
+
                 elif args[0] == "operation":
                     if args[1] == "mode":
                         if args[2] == "test":
@@ -209,28 +208,45 @@ class StringCommandHandler(object):
                     raise InvalidCommand
 
             elif command == "room":
-                if args[0] == "set":
-                    if args[1] == "angle":
-                        angle = float(args[2])
-                    elif args[1] == "pwm":
-                        pwm = float(args[2])
-                    elif args[1] == "temp":
-                        temp = Temperature(float(args[2]))
+                target_room = int(args[0])
+
+                if args[1] == "set":
+
+                    if args[2] == "angle":
+                        angle = float(args[3])
+                        _event = RegisterRotateEvent(self.attached_system.room_dampers[target_room], angle)
+
+                    elif args[2] == "pwm":
+                        pwm = float(args[3])
+                        _event = RegisterPWMEvent(self.attached_system.room_dampers[target_room], pwm)
+
+                    elif args[2] == "open":
+                        _event = RegisterOpenEvent(self.attached_system.room_dampers[target_room])
+
+                    elif args[2] == "close":
+                        _event = RegisterCloseEvent(self.attached_system.room_dampers[target_room])
+
+                    elif args[2] == "temp":
+                        new_temp = Temperature(float(args[2]))
+                        _event = TemperatureTargetUpdatedEvent(self.attached_system.room_sensors[target_room], new_temp)
+
                     else:
                         raise InvalidCommand
 
-                elif args[0] == "get":
-                    if args[1] == "status":
-                        pass
+                elif args[1] == "get":
+                    if args[2] == "status":
+                        # todo: Figure out how to get this to send the value to the requested target
+                        temp = self.attached_system.room_sensors[target_room]
+
                     else:
                         raise InvalidCommand
-
+                else:
+                    raise InvalidCommand
 
             elif command == "fan":
                 if args[0] == "set":
                     if args[1] == "on":
                         pass
-
                     elif args[1] == "off":
                         pass
                     else:
@@ -250,14 +266,41 @@ class StringCommandHandler(object):
                 self.command_dispatch(_event)
 
             else:
-                print(f"Unassigned command with arguments: {inp}")
+                system_logger.warning(f"Unassigned command with arguments: {inp}")
 
         # Except an error with invalid arguments
         except (InvalidCommand, KeyError):
-            print(f"Invalid command: {inp}")
+            system_logger.warning(f"Invalid command: {inp}")
 
-    def command_dispatch(self, command, ):
-        pass
+    def command_dispatch(self, _event):
+        self.handler.add_event(_event)
+
+
+class BluetoothCommandListener(StringCommandHandler):
+
+    def __init__(self, handler: EventHandler, system):
+        # self.wait_for_connection()
+        self.bt_connection = BT_Server()
+        self.bt_connection.advertise_BT_service()
+
+        super().__init__(handler, system)
+
+    def start(self):
+        t = Thread(target=self.connect_accept_data_loop)
+        t.start()
+
+    def connect_accept_data_loop(self):
+        while True:
+            try:
+                self.bt_connection.wait_for_client()
+                self.bt_connection.begin_data_receive_loop(self.handler.event_queue)
+            except IOError:
+                pass
+
+
+class CommandlineCommandHandler(StringCommandHandler):
+    def __init__(self, handler: EventHandler):
+        super().__init__(handler)
 
 
 def queue_drain(q):
@@ -286,8 +329,9 @@ class System(object):
         # Define the element and enable it
         self.element = Element("element", peltier_heating=True)
 
-        # Create a object manager for inter-process communication
-        self.interprocess_object_manager = Manager()
+        # Define an event handler object to process events in the system
+        self.event_handler = EventHandler()
+        self.bt_listener = BluetoothCommandListener(self.event_handler, self)
 
         # Enable the system if default_enabled is true
         if default_enabled:
@@ -317,8 +361,7 @@ class System(object):
             if _uuid not in connected_uuids:
                 system_logger.warning(f"The temperature sensor with ID: {_uuid} was unable to be located on the 1W-BUS")
 
-        #self.servo_enabler = DeviceEnabler(system_constants.servo_enable_pin)
-
+        # self.servo_enabler = DeviceEnabler(system_constants.servo_enable_pin)
 
         # Setup dampers and sensors for each room
         for _id in room_ids:
@@ -473,7 +516,7 @@ class System(object):
         print(f"enabled: {self.element.enabled}\nheating: {self.element.heating}\ncooling: {self.element.cooling}")
 
         # Enable all servos for a period of time
-        #self.servo_enabler.time_enable(0.5)
+        # self.servo_enabler.time_enable(0.5)
 
         # Iterate through each room
         for _id, servo in self.room_dampers.items():
@@ -486,21 +529,21 @@ class System(object):
 
                 # If system in heating mode and the room temperature is still below the target
                 if self.element.heating and (room_error_readings[_id].celsius >= 0.0):
-                    servo.rotate_to_angle(90.0)
+                    servo.close_register()
                     print(f"System not heating room {_id}")
 
                 # If system in cooling mode and the room temperature is still above the target
                 elif self.element.cooling and (room_error_readings[_id].celsius <= 0.0):
-                    servo.rotate_to_angle(90.0)
+                    servo.close_register()
                     print("System not cooling room")
 
                 # The case if the temperature target has not been reached given the current system state
                 else:
-                    servo.rotate_to_angle(0.0)
+                    servo.open_register()
 
             # Dampers should be closed when the system is off
             else:
-                servo.rotate_to_angle(90.0)
+                servo.close_register()
 
         # Decide if the system should change temperature modes
         self.decide_target_direction(room_error_readings.values())
