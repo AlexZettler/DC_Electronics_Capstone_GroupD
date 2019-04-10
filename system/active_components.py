@@ -150,6 +150,18 @@ class Element(PID):
         self._heating = not val
 
     @property
+    def get_heating_mode_string(self):
+        enabled_str = {
+            True: "Enabled",
+            False: "Disabled"
+        }[self.enabled]
+        heatmode_str = {
+            True: "Heating",
+            False: "Cooling"
+        }[self.heating]
+        return f"{enabled_str} {heatmode_str}"
+
+    @property
     def enabled(self) -> bool:
         return self._enabled
 
@@ -301,7 +313,7 @@ class ServoPWMDispatcher(object):
         for pin in self._control_pins.values():
             GPIO.output(pin, False)
 
-    #def add_action_to_queue(self, action: Event):
+    # def add_action_to_queue(self, action: Event):
     #    self.cmd_queue.put(action)
 
     def setup_action_handle_thread(self):
@@ -557,6 +569,7 @@ class RegisterFlowController(Servo):
     def close_register(self):
         self.rotate_to_angle(90.0)
 
+
 class DeviceEnabler(object):
     """
     A device responsible for handling device control
@@ -566,12 +579,15 @@ class DeviceEnabler(object):
         self.pin = pin
 
         GPIO.setup(self.pin, GPIO.OUT)
+        self.status = False
         GPIO.output(self.pin, False)
 
     def enable(self):
+        self.status = True
         GPIO.output(self.pin, True)
 
     def disable(self):
+        self.status = False
         GPIO.output(self.pin, False)
 
     def time_enable(self, _time: float):

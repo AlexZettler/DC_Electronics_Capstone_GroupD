@@ -56,7 +56,7 @@ class BT_Server(object):
         self.client_socket = None
         self.client_info = None
 
-        self.temp_gather_thread = None
+        self.event_thread = None
 
         self.server_socket.bind(("", PORT_ANY))
         self.server_socket.listen(1)
@@ -299,8 +299,9 @@ class BluetoothCommandListener(StringCommandHandler):
 
 
 class CommandlineCommandHandler(StringCommandHandler):
-    def __init__(self, handler: EventHandler):
-        super().__init__(handler)
+    def __init__(self, handler: EventHandler, system):
+        super().__init__(handler, system)
+        pass
 
 
 def queue_drain(q):
@@ -328,6 +329,8 @@ class System(object):
 
         # Define the element and enable it
         self.element = Element("element", peltier_heating=True)
+
+        self.mode = "auto"
 
         # Define an event handler object to process events in the system
         self.event_handler = EventHandler()
@@ -383,6 +386,7 @@ class System(object):
                 duty_at_deg0=duty_deg_0,
                 duty_at_deg90=duty_deg_90,
             )
+        self.room_readings = {}
 
         # Setup element sensors
         self.element_sensors = {
@@ -399,6 +403,10 @@ class System(object):
                 min_temp=system_constants.element_min_temp
             )
         }
+
+    @property
+    def bt_connection(self):
+        return self.bt_listener.bt_connection
 
     def get_all_sensors_iterable(self):
         """
@@ -506,7 +514,7 @@ class System(object):
         """
 
         # Retrieve temperature data
-        external_temperature_readings, room_readings, element_sensor_readings = self.get_temperature_readings()
+        external_temperature_readings, self.room_readings, element_sensor_readings = self.get_temperature_readings()
 
         # Create a dictionary to store all temperature errors
         room_error_readings = self.get_room_temperature_errors(room_readings)
@@ -515,9 +523,24 @@ class System(object):
         print(room_error_readings)
         print(f"enabled: {self.element.enabled}\nheating: {self.element.heating}\ncooling: {self.element.cooling}")
 
-        # Enable all servos for a period of time
-        # self.servo_enabler.time_enable(0.5)
+        if self.mode == "auto":
+            self.handle_auto_cycle(room_error_readings)
+        elif self.mode == "test":
+            pass
+        elif self.mode == "extreme":
+            self.handle_extreme_cycle(room_error_readings)
 
+    def setup_test_mode(self):
+        self.mode = "test"
+        for room in self.room_sensors.values():
+            room.target_temp = Temperature(22.5)
+
+    def setup_auto_mode(self):
+        self.mode = "auto"
+        for room in self.room_sensors.values():
+            room.target_temp = Temperature(22.5)
+
+    def handle_auto_cycle(self, room_error_readings):
         # Iterate through each room
         for _id, servo in self.room_dampers.items():
 
@@ -546,12 +569,31 @@ class System(object):
                 servo.close_register()
 
         # Decide if the system should change temperature modes
-        self.decide_target_direction(room_error_readings.values())
+        if self.error_sum(room_error_readings.values()) == 0.0:
+            # Switch heating/cooling direction
+            self.element.heating = self.element.cooling
+            self.element.apply_state()
 
-    def decide_target_direction(self, error_readings):
+    def setup_extreme_mode(self):
+        self.mode = "extreme"
+        for room in self.room_sensors.values():
+            room.target_temp = Temperature(22.5)
+
+    def handle_extreme_cycle(self, room_error_readings):
+
+        # Catch temperature in direction satisfied
+        if self.error_sum(room_error_readings.values()) == 0.0:
+            # Switch heating/cooling direction
+            self.element.heating = self.element.cooling
+            self.element.apply_state()
+
+            # for room in self.room_sensors.values():
+            self.room_sensors[0].target_temp += 0.1
+            self.room_sensors[2].target_temp -= 0.1
+
+    def error_sum(self, error_readings):
         """
-        Decide on a target direction based on error readings
-        Sets the system into the given target direction
+        returns the sum of temperature error still needed to be satisfied in the system
 
         :param error_readings: An iterable of error readings to help decide the required target direction
         :return: None
@@ -572,11 +614,7 @@ class System(object):
                 if e > 0.0:
                     dir_error_total += float(e)
 
-        # Catch temperature in direction satisfied
-        if dir_error_total == 0.0:
-            # Switch heating/cooling direction
-            self.element.heating = self.element.cooling
-            self.element.apply_state()
+        return dir_error_total
 
     def enter_main_loop(self) -> None:
         """
