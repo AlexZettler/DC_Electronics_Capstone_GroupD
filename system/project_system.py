@@ -46,7 +46,6 @@ system_logger = custom_logger.create_system_logger()
 class BT_Server(object):
     """
     A Bluetooth server is a device which is responsible for managing the connection to client devices
-
     """
 
     def __init__(self):
@@ -135,10 +134,9 @@ class InvalidCommand(Exception):
 
 class StringCommandHandler(object):
 
-    # todo: Add a new Popen process to get input from
     def __init__(self, handler: EventHandler, system):
         self.handler = handler
-        self.attached_system = system
+        self.system = system
         # self.get_input_loop()
 
     def start(self):
@@ -162,27 +160,27 @@ class StringCommandHandler(object):
 
     def handle_input(self, inp):
         command, args = self.input_parse(inp)
-
         _event = None
 
         try:
             if command == "system":
                 if args[0] == "start":
-                    _event = SystemStartEvent()
+                    _event = SystemStartEvent(self.system.element)
 
                 elif args[0] == "stop":
-                    _event = SystemStopEvent()
+                    _event = SystemStopEvent(self.system.element)
 
                 elif args[0] == "operation":
                     if args[1] == "mode":
                         if args[2] == "test":
-                            pass
+                            _event = SystemOperationModeTestEvent(self.system)
                         elif args[2] == "auto":
-                            pass
+                            _event = SystemOperationModeAutoEvent(self.system)
                         elif args[2] == "extreme":
-                            pass
+                            _event = SystemOperationModeExtremeEvent(self.system)
                         else:
                             raise InvalidCommand
+                        raise InvalidCommand
                     else:
                         raise InvalidCommand
                 else:
@@ -191,17 +189,19 @@ class StringCommandHandler(object):
             elif command == "element":
                 if args[0] == "set":
                     if args[1] == "heat":
-                        pass
+                        _event = ElementHeatEvent(self.system.element)
                     elif args[1] == "cool":
-                        pass
+                        _event = ElementCoolEvent(self.system.element)
                     elif args[1] == "heat+cool":
-                        pass
+                        _event = ElementHeatAndCoolEvent(self.system.element)
                     else:
                         raise InvalidCommand
 
                 elif args[0] == "get":
                     if args[1] == "status":
-                        pass
+                        _event = ElementGetStatus(
+                            self.system.element,
+                            self.system.system.bt_connection)
                     else:
                         raise InvalidCommand
                 else:
@@ -214,21 +214,21 @@ class StringCommandHandler(object):
 
                     if args[2] == "angle":
                         angle = float(args[3])
-                        _event = RegisterRotateEvent(self.attached_system.room_dampers[target_room], angle)
+                        _event = RegisterRotateEvent(self.system.room_dampers[target_room], angle)
 
                     elif args[2] == "pwm":
                         pwm = float(args[3])
-                        _event = RegisterPWMEvent(self.attached_system.room_dampers[target_room], pwm)
+                        _event = RegisterPWMEvent(self.system.room_dampers[target_room], pwm)
 
                     elif args[2] == "open":
-                        _event = RegisterOpenEvent(self.attached_system.room_dampers[target_room])
+                        _event = RegisterOpenEvent(self.system.room_dampers[target_room])
 
                     elif args[2] == "close":
-                        _event = RegisterCloseEvent(self.attached_system.room_dampers[target_room])
+                        _event = RegisterCloseEvent(self.system.room_dampers[target_room])
 
                     elif args[2] == "temp":
                         new_temp = Temperature(float(args[2]))
-                        _event = TemperatureTargetUpdatedEvent(self.attached_system.room_sensors[target_room], new_temp)
+                        _event = TemperatureTargetUpdatedEvent(self.system.room_sensors[target_room], new_temp)
 
                     else:
                         raise InvalidCommand
@@ -236,7 +236,7 @@ class StringCommandHandler(object):
                 elif args[1] == "get":
                     if args[2] == "status":
                         # todo: Figure out how to get this to send the value to the requested target
-                        temp = self.attached_system.room_sensors[target_room]
+                        temp = self.system.room_sensors[target_room]
 
                     else:
                         raise InvalidCommand
@@ -299,6 +299,8 @@ class BluetoothCommandListener(StringCommandHandler):
 
 
 class CommandlineCommandHandler(StringCommandHandler):
+
+    # todo: Add a new Popen process to get input from
     def __init__(self, handler: EventHandler, system):
         super().__init__(handler, system)
         pass

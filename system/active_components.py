@@ -122,16 +122,17 @@ class PID(OutputController):
         return delta_error / delta_time
 
 
-class Element(PID):
+class Element(object):
 
-    def __init__(self, _room_id, peltier_heating):
-        super().__init__(_room_id=_room_id, target=0.0, p=0.0, i=0.0, d=0.0, b=0.0)
+    def __init__(self, peltier_heating):
+        super().__init__()
 
         GPIO.setup(heating_pin, GPIO.OUT)
         GPIO.setup(cooling_pin, GPIO.OUT)
 
         self.heating = peltier_heating
         self.enabled = False
+
 
     @property
     def heating(self) -> bool:
@@ -194,6 +195,20 @@ class Element(PID):
             system_logger.info("Is now disabled")
             GPIO.output(heating_pin, False)
             GPIO.output(cooling_pin, False)
+
+
+    def handle_element_disable_state_toggle(self):
+        def action_handler(element: Element):
+            while True:
+                if element.enabled:
+
+                else:
+                    if element.heating
+                    GPIO.output(heating_pin, False)
+
+        t = Thread(target=action_handler)
+        t.start()
+
 
     def generate_target_vector(self, main_temp, sensor_deltas: dict) -> None:
         """

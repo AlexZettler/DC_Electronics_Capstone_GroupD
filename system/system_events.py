@@ -97,7 +97,6 @@ class ElementGetStatus(ElementEvent):
         self.bt_server = bt_server
 
     def action(self):
-        # todo: set this up
         self.bt_server.send_string(self.element.heating)
 
 
